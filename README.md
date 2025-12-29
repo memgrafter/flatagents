@@ -31,6 +31,9 @@ metadata:
 
 ### Example Agent
 
+Define agents in YAML or JSON—both are first-class.
+
+**critic.yml**
 ```yaml
 spec: declarative_agent
 spec_version: "0.4.0"
@@ -63,6 +66,39 @@ data:
 metadata:
   description: "Critiques draft answers"
   tags: ["reflection", "qa"]
+```
+
+**critic.json**
+```json
+{
+  "spec": "declarative_agent",
+  "spec_version": "0.4.0",
+  "data": {
+    "name": "critic",
+    "model": {
+      "provider": "cerebras",
+      "name": "zai-glm-4.6",
+      "temperature": 0.5
+    },
+    "system": "Act as a ruthless critic. Analyze drafts for errors.\nRate severity as: High, Medium, or Low.",
+    "user": "Question: {{ input.question }}\nDraft: {{ input.draft }}",
+    "output": {
+      "critique": {
+        "type": "str",
+        "description": "Specific errors found in the draft"
+      },
+      "severity": {
+        "type": "str",
+        "description": "Error severity",
+        "enum": ["High", "Medium", "Low"]
+      }
+    }
+  },
+  "metadata": {
+    "description": "Critiques draft answers",
+    "tags": ["reflection", "qa"]
+  }
+}
 ```
 
 ## Configuration Reference
