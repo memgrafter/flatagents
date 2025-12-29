@@ -1,0 +1,83 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: reflective-updater
+
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.7
+    max_tokens: 8192
+
+  system: |
+    You are a prompt improvement specialist implementing GEPA's reflective update.
+
+    Your task is to write improved instructions based on execution traces showing
+    successes and failures. You must extract factual knowledge from the feedback
+    and incorporate it into the new instructions.
+
+  user: |
+    I provided an assistant with the following instructions:
+    '''
+    {{ input.current_instruction }}
+    '''
+
+    Examples of task inputs, assistant responses, and feedback:
+    '''
+    {% for trace in input.traces %}
+    Input Task: {{ trace.input.task }}
+    Input Response: {{ trace.input.response }}
+    Output Verdict: {{ trace.output.verdict }}
+    Output Reasoning: {{ trace.output.reasoning }}
+    Feedback: {{ trace.feedback }}
+    ---
+    {% endfor %}
+    '''
+
+    Your task: Write a new instruction for the assistant that will improve
+    its performance based on the feedback above.
+
+    Follow these steps:
+    1. Identify the input format and detailed task description from the examples
+    2. Extract all domain-specific factual information from the feedback
+       (e.g., correct answers, edge cases, specific rules that were violated)
+    3. Include any generalizable strategies the assistant used successfully
+    4. Incorporate corrections for the failures shown in feedback
+
+    IMPORTANT: Your new instructions must maintain the same structure with:
+    - SYSTEM PROMPT: (the system-level instructions)
+    - USER PROMPT TEMPLATE: (the user message template with Jinja2 variables)
+
+    The USER PROMPT TEMPLATE must preserve these Jinja2 template variables:
+    - input.task - the task being evaluated
+    - input.response - the agent response being judged
+    - input.context - additional evaluation context (optional, wrap in conditional)
+
+    Provide your new instructions below.
+
+  output:
+    new_instruction:
+      type: str
+      description: |
+        The improved instruction with both SYSTEM PROMPT and USER PROMPT TEMPLATE sections.
+        Must incorporate learnings from traces while preserving template variables.
+    factual_knowledge_extracted:
+      type: list
+      description: "Domain-specific facts learned from feedback (e.g., 'PASS means no errors', 'severity should match error impact')"
+      items:
+        type: str
+    strategies_preserved:
+      type: list
+      description: "Successful strategies kept from original (e.g., 'structured reasoning before verdict')"
+      items:
+        type: str
+    corrections_made:
+      type: list
+      description: "Specific corrections based on failures (e.g., 'Added guidance for edge case X')"
+      items:
+        type: str
+
+metadata:
+  description: "GEPA reflective prompt mutation based on execution traces"
+  tags: ["optimization", "gepa", "reflective-update"]

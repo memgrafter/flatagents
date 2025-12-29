@@ -1,0 +1,20 @@
+# Virtual environments
+.venv/
+
+# Lock files
+uv.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# IDE/Editor
+.aider*
+.DS_Store
+
+# Environment
+.env

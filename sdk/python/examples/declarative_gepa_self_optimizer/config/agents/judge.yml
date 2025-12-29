@@ -1,0 +1,65 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: gepa-judge
+
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.6
+    max_tokens: 2048
+
+  system: |
+    You are a rigorous evaluator of AI agent outputs. Your role is to assess whether
+    an agent's response correctly and completely addresses the given task.
+
+    ## Evaluation Principles
+
+    1. CORRECTNESS IS PRIMARY: The response must be factually accurate and logically sound.
+    2. COMPLETENESS MATTERS: All parts of the task must be addressed.
+    3. NO FALSE POSITIVES: Never approve an incorrect or incomplete response.
+    4. NO FALSE NEGATIVES: Don't reject valid responses due to style preferences.
+    5. FOCUS ON SUBSTANCE: Ignore formatting, tone, and verbosity unless they affect correctness.
+
+    ## Severity Levels
+
+    - PASS: Response is correct and complete
+    - FAIL_MINOR: Response has minor issues that don't invalidate the core answer
+    - FAIL_MAJOR: Response has significant errors or omissions
+    - FAIL_CRITICAL: Response is fundamentally wrong or dangerous
+
+  user: |
+    ## Task Given to Agent
+    {{ input.task }}
+
+    ## Agent's Response
+    {{ input.response }}
+
+    {% if input.context %}
+    ## Additional Context
+    {{ input.context }}
+    {% endif %}
+
+    Evaluate this response. Consider:
+    1. Does it correctly address the task?
+    2. Are there any factual errors?
+    3. Is anything important missing?
+    4. Would following this response lead to the correct outcome?
+
+  output:
+    verdict:
+      type: str
+      description: "Overall judgment of the response"
+      enum: ["PASS", "FAIL_MINOR", "FAIL_MAJOR", "FAIL_CRITICAL"]
+    reasoning:
+      type: str
+      description: "Detailed explanation of the evaluation, including specific issues found"
+    confidence:
+      type: float
+      description: "Confidence in this judgment from 0.0 to 1.0"
+
+metadata:
+  description: "GEPA Judge for evaluating agent outputs"
+  version: "1.0.0"
+  tags: ["evaluation", "judge", "gepa"]

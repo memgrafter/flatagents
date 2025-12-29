@@ -1,0 +1,71 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: response-generator
+
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 1.0
+    max_tokens: 4096
+
+  system: |
+    You generate responses to tasks, sometimes introducing specific errors to test
+    an evaluation system. Your goal is to create realistic responses that would
+    challenge a judge's ability to detect issues.
+
+    ## When Introducing Errors
+
+    - Make errors subtle but detectable by careful analysis
+    - Maintain overall response coherence (don't make obviously broken responses)
+    - The error should match the specified error type
+    - Errors should be the kind that could realistically occur
+
+    ## Error Types
+
+    - NONE: Generate a fully correct response
+    - FACTUAL_ERROR: Include incorrect facts or information
+    - LOGICAL_FLAW: Include reasoning that doesn't follow
+    - INCOMPLETE: Leave out important parts of the answer
+    - SUBTLE_MISTAKE: Small error that changes the outcome (off-by-one, typo in code, etc.)
+    - HALLUCINATION: Include plausible-sounding but fabricated information
+    - MISUNDERSTANDING: Answer a slightly different question than asked
+
+  user: |
+    Generate a response to this task.
+
+    ## Task
+    {{ input.task }}
+
+    ## Reference Correct Response
+    {{ input.correct_response }}
+
+    ## Error Type to Introduce
+    {{ input.error_type }}
+
+    {% if input.error_type == "NONE" %}
+    Generate a correct response. It doesn't need to match the reference exactly,
+    but must be fully correct.
+    {% else %}
+    Introduce a {{ input.error_type }} error. Make it subtle but detectable.
+    {% endif %}
+
+  output:
+    response:
+      type: str
+      description: "The generated response to the task"
+    has_error:
+      type: bool
+      description: "Whether this response contains an intentional error"
+    error_description:
+      type: str
+      description: "Description of the error introduced (empty if no error)"
+    expected_verdict:
+      type: str
+      description: "What verdict a good judge should give"
+      enum: ["PASS", "FAIL_MINOR", "FAIL_MAJOR", "FAIL_CRITICAL"]
+
+metadata:
+  description: "Generates test responses with controlled errors"
+  tags: ["data-generation", "adversarial"]

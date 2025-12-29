@@ -1,0 +1,27 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: writer
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.8
+  system: You write short, punchy marketing copy. Be creative and memorable.
+  user: |
+    Product: {{ input.product }}
+    {% if input.feedback %}
+    Previous attempt: {{ input.tagline }}
+    Feedback: {{ input.feedback }}
+    Write an improved tagline that addresses the feedback.
+    {% else %}
+    Write a catchy tagline for this product.
+    {% endif %}
+  output:
+    tagline:
+      type: str
+      description: A short, memorable marketing tagline
+
+metadata:
+  author: flatagents
+  description: Marketing copy writer agent

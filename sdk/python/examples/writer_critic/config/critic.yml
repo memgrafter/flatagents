@@ -1,0 +1,32 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: critic
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.3
+  system: |
+    You critique marketing copy. Be constructive but direct.
+    Score fairly - a 10 should be exceptional, 7-8 is good, 5-6 is mediocre.
+  user: |
+    Product: {{ input.product }}
+    Tagline: "{{ input.tagline }}"
+
+    Evaluate this tagline for:
+    - Memorability
+    - Clarity of message
+    - Emotional appeal
+    - Relevance to the product
+  output:
+    feedback:
+      type: str
+      description: Constructive feedback on how to improve
+    score:
+      type: int
+      description: Score from 1-10
+
+metadata:
+  author: flatagents
+  description: Marketing copy critic agent

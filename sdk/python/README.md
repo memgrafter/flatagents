@@ -9,7 +9,6 @@ Python SDK for [FlatAgents](https://github.com/memgrafter/flatagents)—a declar
 - [ ] Unify input/output adapters for agent chaining
 - [ ] Simplify output adapters
 - [ ] Add declarative workflows (flatworkflows)
-- [ ] Add examples
 - [ ] TypeScript SDK
 
 ## Why FlatAgents?
@@ -226,6 +225,15 @@ class MyBackend:
 
 agent = MyAgent(backend=MyBackend())
 ```
+
+## Examples
+
+More examples are available in the [`examples/`](https://github.com/memgrafter/flatagents/tree/main/sdk/python/examples) directory:
+
+- **[declarativeagent_helloworld](examples/declarativeagent_helloworld)** - Minimal getting started example
+- **[writer_critic](examples/writer_critic)** - Iterative refinement with two agents
+- **[declarative_mdap](examples/declarative_mdap)** - Multi-step reasoning with calibrated confidence
+- **[declarative_gepa_self_optimizer](examples/declarative_gepa_self_optimizer)** - Self-optimizing prompt evolution
 
 ## License
 

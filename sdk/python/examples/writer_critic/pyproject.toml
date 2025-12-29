@@ -1,0 +1,16 @@
+[project]
+name = "writer_critic"
+version = "0.1.0"
+description = "Writer-Critic multi-agent demo for FlatAgents"
+dependencies = ["flatagents[litellm]"]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project.scripts]
+writer-critic-demo = "writer_critic.main:main"

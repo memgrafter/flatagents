@@ -1,0 +1,103 @@
+# Tower of Hanoi agent configuration for MDAP v0.4.0
+# Prompts copied exactly from mdap/hanoi_solver.py
+
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: hanoi-mdap
+
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 1.0
+    max_tokens: 2000
+
+  # Exact SYSTEM_PROMPT from hanoi_solver.py lines 43-64
+  system: |
+    You are a helpful assistant. Solve this puzzle for me.
+    There are three pegs and n disks of different sizes stacked on the first peg. The disks are
+    numbered from 1 (smallest) to n (largest). Disk moves in this puzzle should follow:
+    1. Only one disk can be moved at a time.
+    2. Each move consists of taking the upper disk from one stack and placing it on top of
+    another stack.
+    3. A larger disk may not be placed on top of a smaller disk.
+    The goal is to move the entire stack to the third peg.
+    Example: With 3 disks numbered 1 (smallest), 2, and 3 (largest), the initial state is [[3, 2,
+    1], [], []], and a solution might be:
+    moves = [[1, 0, 1], [2, 0, 2], [1, 1, 2], [3, 0, 1], [1, 2, 0], [2, 2, 1], [1, 0, 1]]
+    This means: Move disk 1 from peg 0 to peg 1, then move disk 2 from peg 0 to peg 2, and so on.
+    Requirements:
+    - The positions are 0-indexed (the leftmost peg is 0).
+    - Ensure your answer includes a single next move in this EXACT FORMAT:
+    '''move = [disk id, from peg, to peg]'''
+    - Ensure your answer includes the next state resulting from applying the move to the current
+    state in this EXACT FORMAT:
+    '''next_state = [[...], [...], [...]]'''
+    The response must be under 2048 tokens.
+
+  # Exact USER_TEMPLATE from hanoi_solver.py lines 66-81
+  user: |
+    Rules:
+    - Only one disk can be moved at a time.
+    - Only the top disk from any stack can be moved.
+    - A larger disk may not be placed on top of a smaller disk.
+    For all moves, follow the standard Tower of Hanoi procedure:
+    If the previous move did not move disk 1, move disk 1 clockwise one peg (0 -> 1 -> 2 -> 0).
+    If the previous move did move disk 1, make the only legal move that does not involve moving
+    disk1.
+    Use these clear steps to find the next move given the previous move and current state.
+
+    Previous move: {% if input.previous_move %}{{ input.previous_move }}{% else %}None{% endif %}
+    Current State: {{ input.pegs }}
+    Based on the previous move and current state, find the single next move that follows the
+    procedure and the resulting next state.
+
+  # No output schema - MDAP orchestrator uses regex parsing for this format
+
+metadata:
+  description: "Tower of Hanoi solver for MDAP"
+  tags: ["hanoi", "mdap"]
+
+  # Multi-field regex parsing for MDAP orchestrator
+  parsing:
+    move:
+      pattern: "move\\s*=\\s*(\\[\\s*\\d+\\s*,\\s*\\d+\\s*,\\s*\\d+\\s*\\])"
+      type: json
+    predicted_state:
+      pattern: "next_state\\s*=\\s*(\\[\\s*\\[.*?\\]\\s*,\\s*\\[.*?\\]\\s*,\\s*\\[.*?\\]\\s*\\])"
+      type: json
+
+  # JSON Schema validation for parsed output (cross-SDK compatible)
+  validation:
+    type: object
+    required: [move, predicted_state]
+    properties:
+      move:
+        type: array
+        minItems: 3
+        maxItems: 3
+        items:
+          type: integer
+          minimum: 0
+      predicted_state:
+        type: array
+        minItems: 3
+        maxItems: 3
+        items:
+          type: array
+          items:
+            type: integer
+
+  # MDAP orchestration settings (calibrated for 70% per-step accuracy)
+  mdap:
+    k_margin: 5
+    max_candidates: 15
+    max_steps: 100
+    max_response_tokens: 2048
+
+  # Problem-specific settings
+  # Note: For even disk counts with clockwise algorithm, target is peg 2 (index 2)
+  hanoi:
+    initial_pegs: [[4, 3, 2, 1], [], []]
+    goal_pegs: [[], [], [4, 3, 2, 1]]

@@ -160,8 +160,8 @@ class DeclarativeAgent:
         self._user_prompt_template = data.get('user', '')
         self._instruction_suffix = data.get('instruction_suffix', '')
 
-        # Compile Jinja2 template
-        self._jinja_env = jinja2.Environment(undefined=jinja2.StrictUndefined)
+        # Compile Jinja2 template (use default Undefined for optional template variables)
+        self._jinja_env = jinja2.Environment()
         self._compiled_user = self._jinja_env.from_string(self._user_prompt_template)
 
         # Output schema (stored for reference, extraction uses json_object mode)

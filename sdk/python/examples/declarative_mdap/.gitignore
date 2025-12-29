@@ -1,0 +1,22 @@
+# Virtual environments
+.venv/
+
+# Lock files
+uv.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# IDE/Editor
+.DS_Store
+
+# Environment
+.env
+
+# Data/cache
+calibration_cache.pkl

@@ -1,0 +1,59 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: summary-generator
+
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 1.0
+    max_tokens: 2048
+
+  system: |
+    You generate concise summaries of optimization runs for the GEPA self-optimizer.
+    Your summaries should be informative and actionable.
+
+  user: |
+    Generate a summary of this optimization run.
+
+    ## Optimization Statistics
+    - Iterations: {{ input.num_iterations }}
+    - Total LLM Calls: {{ input.total_calls }}
+    - Evaluation Examples: {{ input.num_examples }}
+
+    ## Performance Progression
+    {% for iteration in input.iterations %}
+    Iteration {{ loop.index }}: Accuracy {{ iteration.accuracy }}% ({{ iteration.change }})
+    {% endfor %}
+
+    ## Final Results
+    - Starting Accuracy: {{ input.start_accuracy }}%
+    - Final Accuracy: {{ input.final_accuracy }}%
+    - Improvement: {{ input.improvement }}%
+
+    ## Key Changes Made
+    {% for change in input.key_changes %}
+    - {{ change }}
+    {% endfor %}
+
+    Provide a brief summary suitable for a technical report.
+
+  output:
+    summary:
+      type: str
+      description: "Executive summary of the optimization run"
+    key_insights:
+      type: list
+      description: "Most important findings from the optimization"
+      items:
+        type: str
+    recommendations:
+      type: list
+      description: "Recommendations for further improvement"
+      items:
+        type: str
+
+metadata:
+  description: "Generates summaries of optimization runs"
+  tags: ["reporting", "summary"]

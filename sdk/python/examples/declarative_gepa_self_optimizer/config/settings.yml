@@ -1,0 +1,80 @@
+# GEPA Self-Optimizer Settings
+# Configuration for optimizing the judge agent
+
+optimization:
+  # Budget profile: development, light, medium, heavy
+  profile: development
+
+  # Or set explicit limits (overrides profile)
+  # max_metric_calls: 80
+  # max_full_evals: null
+
+  # Number of optimization runs to merge
+  merge_invocations: 3
+
+  # Retry attempts for failed optimization
+  max_retries: 3
+
+models:
+  # All agents use Cerebras zai-glm-4.6
+  # Temperature: 0.6 for analytical tasks, 1.0 for creative tasks
+  default:
+    provider: cerebras
+    name: zai-glm-4.6
+
+  # Task model - the judge being optimized (analytical)
+  task:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.6
+
+  # Reflection model - analyzes failures and proposes improvements (analytical)
+  reflection:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.6
+
+evaluation:
+  # Minimum number of evaluation examples required
+  min_examples: 20
+
+  # Train/test split ratio
+  train_ratio: 0.8
+
+  # Metric weights
+  weights:
+    accuracy: 0.5       # Did judge verdict match ground truth?
+    calibration: 0.3    # Does confidence correlate with correctness?
+    reasoning: 0.2      # Is the reasoning specific and actionable?
+
+data_generation:
+  # How to generate evaluation data
+  method: diverse  # diverse, adversarial, or from_file
+
+  # Number of examples to generate
+  num_examples: 50
+
+  # Task domains to include
+  domains:
+    - coding
+    - reasoning
+    - factual
+    - math
+
+  # Error types to inject for adversarial generation
+  error_types:
+    - factual_error
+    - logical_flaw
+    - incomplete_answer
+    - subtle_mistake
+    - correct_response  # Include correct responses to avoid false negatives
+
+output:
+  # Where to save optimized judge configs
+  output_dir: output
+
+  # Whether to save intermediate results
+  save_intermediate: true
+
+  # Logging level
+  log_level: INFO

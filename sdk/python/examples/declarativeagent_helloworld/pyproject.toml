@@ -1,0 +1,16 @@
+[project]
+name = "declarativeagent_helloworld"
+version = "0.1.0"
+description = "'Hello, World!' demo for the DeclarativeAgent."
+dependencies = ["flatagents[litellm]"]
+requires-python = ">=3.10"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[project.scripts]
+helloworld-demo = "declarativeagent_helloworld.main:main"

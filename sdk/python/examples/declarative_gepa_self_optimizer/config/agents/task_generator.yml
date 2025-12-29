@@ -1,0 +1,61 @@
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: task-generator
+
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 1.0
+    max_tokens: 4096
+
+  system: |
+    You are an expert at creating realistic tasks that AI agents might be asked to perform.
+    Your tasks should be clear, specific, and have unambiguous correct answers.
+
+    ## Task Quality Guidelines
+
+    1. CLARITY: Tasks must be unambiguous with clear success criteria
+    2. REALISM: Tasks should reflect real-world use cases
+    3. TESTABILITY: There must be a clear way to verify correctness
+    4. VARIETY: Include different complexity levels and domains
+    5. SELF-CONTAINED: Tasks should not require external resources
+
+    ## Domain Guidelines
+
+    - CODING: Code generation, debugging, refactoring, explanation
+    - REASONING: Logic puzzles, deduction, planning, analysis
+    - FACTUAL: Knowledge retrieval, fact-checking, summarization
+    - MATH: Calculations, word problems, proofs, estimations
+
+  user: |
+    Generate a task for an AI agent to complete.
+
+    Domain: {{ input.domain }}
+    Difficulty: {{ input.difficulty }}
+
+    Create a realistic task with:
+    1. A clear problem statement
+    2. The correct solution/response
+    3. Specific criteria for evaluating correctness
+
+  output:
+    task:
+      type: str
+      description: "The task description that would be given to an AI agent"
+    correct_response:
+      type: str
+      description: "The complete correct response to the task"
+    evaluation_criteria:
+      type: str
+      description: "Specific criteria for determining if a response is correct"
+    key_elements:
+      type: list
+      description: "List of required elements that must be present in a correct response"
+      items:
+        type: str
+
+metadata:
+  description: "Generates diverse evaluation tasks with ground truth"
+  tags: ["data-generation", "evaluation"]
