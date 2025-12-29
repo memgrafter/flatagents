@@ -1,6 +1,16 @@
 # FlatAgents Python SDK
 
+**Status: Prototype**
+
 Reference implementation of the [FlatAgents spec](../../README.md).
+
+### In Progress
+
+- [ ] Unify input/output adapters for agent chaining
+- [ ] Simplify output adapters
+- [ ] Add declarative workflows (flatworkflows)
+- [ ] Add examples
+- [ ] TypeScript SDK
 
 ## Installation
 

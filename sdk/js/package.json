@@ -4,16 +4,24 @@
   "description": "A lightweight framework for building LLM-powered agents with pluggable backends.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
+    "prepublishOnly": "npm run build",
     "test": "echo \"No tests yet\""
   },
-  "keywords": ["llm", "agents", "ai", "framework"],
+  "keywords": ["llm", "agents", "ai", "framework", "declarative"],
   "author": "memgrafter@gmail.com",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/memgrafter/flatagents.git",
     "directory": "sdk/js"
+  },
+  "homepage": "https://github.com/memgrafter/flatagents",
+  "devDependencies": {
+    "typescript": "^5.0.0"
   }
 }

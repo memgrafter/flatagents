@@ -1,7 +1,8 @@
-
 .env
-__pycache__
 uv.lock
+
+node_modules
+__pycache__
 dist
 
 .DS_Store
