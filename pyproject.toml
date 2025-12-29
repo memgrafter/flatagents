@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "flatagents"
+version = "0.1.0"
+description = "A lightweight framework for building LLM-powered agents with pluggable backends."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { email = "memgrafter@gmail.com" }
+]
+keywords = ["llm", "agents", "ai", "framework", "litellm", "aisuite"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = ["pyyaml", "jinja2"]
+
+[project.optional-dependencies]
+litellm = ["litellm"]
+aisuite = ["aisuite"]
+all = ["litellm", "aisuite"]
+
+[project.urls]
+Homepage = "https://github.com/memgrafter/flatagents"
+Repository = "https://github.com/memgrafter/flatagents"
+Issues = "https://github.com/memgrafter/flatagents/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["flatagents"]
