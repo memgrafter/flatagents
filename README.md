@@ -1,178 +1,68 @@
 # FlatAgents
 
-A lightweight framework for building LLM-powered agents with pluggable backends.
+A declarative specification for LLM-powered agents. Define agents in YAML/JSON, run them anywhere.
 
-## Installation
+- **Orchestrate via code or existing orchestration** - FlatAgents defines single agents, not workflows. Compose them using your language of choice or plug into existing orchestration frameworks.
+- **Use LLM-assisted coding to define your agent YAMLs** - For best results, let an LLM help you write and iterate on agent configurations.
 
-```bash
-pip install flatagents[litellm]   # LiteLLM backend
-pip install flatagents[aisuite]   # AISuite backend
-pip install flatagents[all]       # Both backends
+## The Spec
+
+An agent is a single LLM call: **model + prompts + output schema**. That's it.
+
+See [`declarative-agent.d.ts`](./declarative-agent.d.ts) for the full TypeScript schema.
+
+### Structure
+
+```yaml
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: my-agent
+  model: { ... }
+  system: "..."
+  user: "..."
+  output: { ... }
+
+metadata:
+  description: "Optional metadata"
+  tags: ["example"]
 ```
 
-Core dependencies: `pyyaml`, `jinja2`
+### Example Agent
 
-## Components
+```yaml
+spec: declarative_agent
+spec_version: "0.4.0"
 
-### FlatAgent
+data:
+  name: critic
 
-Abstract base class for agents. Subclass and implement:
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.5
 
-- `create_initial_state()` - Initialize problem state
-- `generate_step_prompt(state)` - Generate user prompt for current state
-- `update_state(state, result)` - Apply parsed result to state
-- `is_solved(state)` - Check termination condition
+  system: |
+    Act as a ruthless critic. Analyze drafts for errors.
+    Rate severity as: High, Medium, or Low.
 
-### DeclarativeAgent
+  user: |
+    Question: {{ input.question }}
+    Draft: {{ input.draft }}
 
-A FlatAgent configured entirely via YAML or JSON. No code required.
+  output:
+    critique:
+      type: str
+      description: "Specific errors found in the draft"
+    severity:
+      type: str
+      description: "Error severity"
+      enum: ["High", "Medium", "Low"]
 
-### LLMBackend
-
-Protocol for LLM providers. Two implementations available:
-
-- **`LiteLLMBackend`** - Uses [litellm](https://github.com/BerriAI/litellm). Model format: `provider/model`
-- **`AISuiteBackend`** - Uses [aisuite](https://github.com/andrewyng/aisuite). Model format: `provider:model`
-
-```python
-from flatagents import LiteLLMBackend, AISuiteBackend
-
-# LiteLLM
-backend = LiteLLMBackend(model="openai/gpt-4o", temperature=0.7)
-
-# AISuite (install provider: pip install 'aisuite[openai]')
-backend = AISuiteBackend(model="openai:gpt-4o", temperature=0.7)
-```
-
-## Usage
-
-### Coded Agent (FlatAgent subclass)
-
-```python
-from flatagents import FlatAgent
-
-class MyAgent(FlatAgent):
-    def create_initial_state(self):
-        return {"count": 0}
-
-    def generate_step_prompt(self, state):
-        return f"Count is {state['count']}. What's next?"
-
-    def update_state(self, state, result):
-        return {**state, "count": int(result)}
-
-    def is_solved(self, state):
-        return state["count"] >= 10
-
-agent = MyAgent(config_file="config.yaml")
-trace = await agent.execute()
-```
-
-### Flat Agent (YAML-configured)
-
-```python
-from flatagents import DeclarativeAgent
-
-agent = DeclarativeAgent(config_file="agent.yaml")
-trace = await agent.execute()
-```
-
-See `declarative-agent.d.ts` for the full configuration schema.
-
-## On-the-Fly Agent Creation
-
-DeclarativeAgent supports dynamic configuration via `config_dict`, enabling
-agents to be created programmatically without filesystem access.
-
-### Direct Dictionary Configuration
-
-```python
-from flatagents import DeclarativeAgent
-
-config = {
-    "agent": {"name": "dynamic-counter"},
-    "model": {
-        "provider": "cerebras",
-        "name": "zai-glm-4.6",
-        "temperature": 0.7
-    },
-    "state": {
-        "initial": {"count": 0, "target": 5}
-    },
-    "prompts": {
-        "system": "You are a counting assistant.",
-        "user": "Current count: {{ state.count }}. Target: {{ state.target }}. What's the next number?"
-    },
-    "parsing": {
-        "pattern": "(\\d+)",
-        "group": 1,
-        "type": "int"
-    },
-    "state_update": {
-        "count": "{{ parsed }}"
-    },
-    "termination": {
-        "condition": "state['count'] >= state['target']"
-    }
-}
-
-agent = DeclarativeAgent(config_dict=config)
-trace = await agent.execute()
-```
-
-### Meta-Agent Pattern
-
-An orchestrating agent can generate configurations for sub-agents:
-
-```python
-async def run_dynamic_task(task_description: str):
-    # Meta-agent generates config based on task
-    config = await generate_agent_config(task_description)
-
-    # Instantiate and run the dynamic agent
-    agent = DeclarativeAgent(config_dict=config)
-    return await agent.execute()
-```
-
-### Template-Based Creation
-
-Combine base templates with runtime parameters:
-
-```python
-def create_agent(target_string: str, model: str = "openai/gpt-4"):
-    return DeclarativeAgent(config_dict={
-        "agent": {"name": f"builder-{target_string[:10]}"},
-        "model": {"name": model},
-        "state": {
-            "initial": {"current": "", "target": target_string}
-        },
-        "prompts": {
-            "system": "You build strings character by character.",
-            "user": "Target: '{{ state.target }}'. Current: '{{ state.current }}'. Next char?"
-        },
-        "parsing": {"pattern": '"(.)"'},
-        "state_update": {"current": "state['current'] + parsed"},
-        "termination": {"condition": "state['current'] == state['target']"}
-    })
-
-agent = create_agent("Hello!")
-trace = await agent.execute()
-```
-
-### Serialization for Later Use
-
-Configs can be stored and retrieved:
-
-```python
-import json
-
-# Store config
-config = {...}
-with open("stored_agent.json", "w") as f:
-    json.dump(config, f)
-
-# Later: load and instantiate
-agent = DeclarativeAgent(config_file="stored_agent.json")
+metadata:
+  description: "Critiques draft answers"
+  tags: ["reflection", "qa"]
 ```
 
 ## Configuration Reference
@@ -181,108 +71,109 @@ agent = DeclarativeAgent(config_file="stored_agent.json")
 
 ```yaml
 model:
-  name: "gpt-4"
-  provider: "openai"      # Combined as "openai/gpt-4"
-  temperature: 0.7
-  max_tokens: 2048
-  retry_delays: [1, 2, 4, 8]
+  name: "gpt-4"              # Model name
+  provider: "openai"         # Provider (openai, anthropic, cerebras, etc.)
+  temperature: 0.7           # Sampling temperature (0.0 to 2.0)
+  max_tokens: 2048           # Maximum tokens to generate
+  top_p: 1.0                 # Nucleus sampling parameter
+  frequency_penalty: 0.0     # Frequency penalty (-2.0 to 2.0)
+  presence_penalty: 0.0      # Presence penalty (-2.0 to 2.0)
 ```
 
-### State Configuration
+### Prompts (Jinja2 Templates)
+
+Prompts use Jinja2 templating. Available variables:
+- `input.*` - Values passed to the agent at runtime
 
 ```yaml
-state:
-  initial:
-    count: 0
-    items: []
-  complexity: 10          # Or expression: "len(state['items'])"
+system: |
+  You are a helpful assistant specialized in {{ input.domain }}.
+
+user: |
+  Question: {{ input.question }}
+  Context: {{ input.context }}
+
+instruction_suffix: "Respond in JSON format."  # Optional, appended after user prompt
 ```
 
-### Prompts Configuration
+### Output Schema
+
+Declares expected output fields. The runtime decides how to extract them (structured output, tool calls, regex, etc.)
 
 ```yaml
-prompts:
-  system: "You are a helpful assistant."
-  user: |
-    Current state: {{ state.count }}
-    What should we do next?
-  post_history_instruction: "Respond with only a number."
+output:
+  answer:
+    type: str
+    description: "The answer to the question"
+
+  confidence:
+    type: float
+    description: "Confidence score"
+
+  category:
+    type: str
+    description: "Answer category"
+    enum: ["factual", "opinion", "unknown"]
+
+  sources:
+    type: list
+    items:
+      type: str
+    description: "List of sources"
+
+  metadata:
+    type: object
+    properties:
+      reasoning:
+        type: str
+      tokens_used:
+        type: int
 ```
 
-### Parsing Configuration
+**Supported types:** `str`, `int`, `float`, `bool`, `json`, `list`, `object`
 
-Single-field parsing (simple):
+### Metadata
+
+Extensibility layer. Runners ignore unrecognized keys.
 
 ```yaml
-parsing:
-  pattern: "(\\d+)"       # Regex with capture group
-  group: 1                # Which group to extract
-  type: "int"             # Convert to: str, int, float, bool
+metadata:
+  description: "What this agent does"
+  tags: ["category", "type"]
+  author: "name"
+  # Add any custom fields
 ```
 
-Multi-field parsing (for structured outputs):
+## Reference SDKs
 
-```yaml
-parsing:
-  fields:
-    move:
-      pattern: "move\\s*=\\s*(\\[\\d+,\\s*\\d+,\\s*\\d+\\])"
-      type: "json"
-    next_state:
-      pattern: "next_state\\s*=\\s*(\\[\\[.*?\\]\\])"
-      type: "json"
+| SDK | Package | Status |
+|-----|---------|--------|
+| [Python](./sdk/python) | `pip install flatagents` | Available |
+| [JavaScript](./sdk/js) | `npm install flatagents` | Coming soon |
+
+### Python Quick Start
+
+```bash
+pip install flatagents[litellm]
 ```
-
-Supported types: `str`, `int`, `float`, `bool`, `json`
-
-### Validation Configuration
-
-Validate parsed results with Python expressions:
-
-```yaml
-validation:
-  - "len(parsed.get('move', [])) == 3"
-  - "parsed['move'][0] >= 1"
-  - "0 <= parsed['move'][1] <= 2"
-```
-
-All rules must evaluate to `True` for the response to be accepted.
-Available variable: `parsed` (the parsed result dict).
-
-### State Update Configuration
-
-```yaml
-state_update:
-  count: "{{ parsed }}"                    # Jinja2 template
-  total: "state['total'] + parsed"         # Python expression
-  done: true                               # Literal value
-```
-
-### Termination Configuration
-
-```yaml
-termination:
-  condition: "state['count'] >= 10"        # Python expression
-```
-
-## Custom LLM Backends
-
-Implement the `LLMBackend` protocol:
 
 ```python
-from flatagents import FlatAgent, LLMBackend
+from flatagents import DeclarativeAgent
 
-class MyBackend:
-    total_cost: float = 0.0
-    total_api_calls: int = 0
-
-    async def call(self, messages: list, **kwargs) -> str:
-        # Your LLM call logic here
-        self.total_api_calls += 1
-        return "response"
-
-agent = MyAgent(backend=MyBackend())
+agent = DeclarativeAgent(config_file="agent.yaml")
+result = await agent.execute(input={"question": "What is 2+2?"})
 ```
+
+### JavaScript Quick Start
+
+Coming soon.
+
+## Design Principles
+
+1. **Declarative over imperative** - Define what you want, not how to get it
+2. **Single responsibility** - One agent = one LLM call
+3. **Runtime agnostic** - Same spec works across different runners
+4. **Output-focused** - Declare the schema, let the runtime extract it
 
 ## License
 
