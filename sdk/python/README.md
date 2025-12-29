@@ -2,7 +2,7 @@
 
 **Status: Prototype**
 
-Reference implementation of the [FlatAgents spec](../../README.md).
+Python SDK for [FlatAgents](https://github.com/memgrafter/flatagents)—a declarative format for defining AI agents. Write your agent config once, run it anywhere. See the [spec](https://github.com/memgrafter/flatagents/blob/main/declarative-agent.d.ts).
 
 ### In Progress
 
@@ -12,24 +12,145 @@ Reference implementation of the [FlatAgents spec](../../README.md).
 - [ ] Add examples
 - [ ] TypeScript SDK
 
-## Installation
+## Why FlatAgents?
 
-```bash
-pip install flatagents[litellm]   # LiteLLM backend
-pip install flatagents[aisuite]   # AISuite backend
-pip install flatagents[all]       # Both backends
+Agent configs are portable. Write your agent YAML once, run it with any SDK that implements the spec. Share agents across teams, languages, and frameworks. Want an SDK for your language? [Build one](https://github.com/memgrafter/flatagents)—the spec is simple.
+
+## Agent Definition
+
+Define agents in YAML or JSON. Both formats are first-class.
+
+**agent.yml**
+```yaml
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: summarizer
+  model:
+    provider: openai
+    name: gpt-4o-mini
+  system: You summarize text concisely.
+  user: "Summarize this: {{ input.text }}"
+  output:
+    summary:
+      type: str
+      description: A concise summary
 ```
 
-## Usage
-
-### From YAML/JSON Config
+**agent.json**
+```json
+{
+  "spec": "declarative_agent",
+  "spec_version": "0.4.0",
+  "data": {
+    "name": "summarizer",
+    "model": {
+      "provider": "openai",
+      "name": "gpt-4o-mini"
+    },
+    "system": "You summarize text concisely.",
+    "user": "Summarize this: {{ input.text }}",
+    "output": {
+      "summary": {
+        "type": "str",
+        "description": "A concise summary"
+      }
+    }
+  }
+}
+```
 
 ```python
 from flatagents import DeclarativeAgent
 
-agent = DeclarativeAgent(config_file="agent.yaml")
-result = await agent.execute(input={"question": "What is 2+2?"})
+agent = DeclarativeAgent(config_file="agent.yml")  # or agent.json
+result = await agent.execute(input={"text": "Long article here..."})
+print(result["summary"])
 ```
+
+## Quick Start
+
+```bash
+pip install flatagents[litellm]
+```
+
+**writer.yaml**
+```yaml
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: writer
+  model:
+    provider: openai
+    name: gpt-4o-mini
+  system: You write short, punchy marketing copy.
+  user: |
+    Product: {{ input.product }}
+    {% if input.feedback %}Previous attempt: {{ input.tagline }}
+    Feedback: {{ input.feedback }}
+    Write an improved tagline.{% else %}Write a tagline.{% endif %}
+  output:
+    tagline:
+      type: str
+      description: The tagline
+```
+
+**critic.yaml**
+```yaml
+spec: declarative_agent
+spec_version: "0.4.0"
+
+data:
+  name: critic
+  model:
+    provider: openai
+    name: gpt-4o-mini
+  system: You critique marketing copy. Be constructive but direct.
+  user: |
+    Product: {{ input.product }}
+    Tagline: {{ input.tagline }}
+  output:
+    feedback:
+      type: str
+      description: Constructive feedback
+    score:
+      type: int
+      description: Score from 1-10
+```
+
+**run.py**
+```python
+import asyncio
+from flatagents import DeclarativeAgent
+
+async def main():
+    writer = DeclarativeAgent(config_file="writer.yaml")
+    critic = DeclarativeAgent(config_file="critic.yaml")
+
+    product = "a CLI tool for AI agents"
+    draft = await writer.execute(input={"product": product})
+
+    for round in range(4):
+        review = await critic.execute(input={"product": product, **draft})
+        print(f"Round {round + 1}: \"{draft['tagline']}\" - {review['score']}/10")
+
+        if review["score"] >= 8:
+            break
+        draft = await writer.execute(input={"product": product, **review, **draft})
+
+    print(f"Final: {draft['tagline']}")
+
+asyncio.run(main())
+```
+
+```bash
+export OPENAI_API_KEY="your-key"
+python run.py
+```
+
+## Usage
 
 ### From Dictionary
 
