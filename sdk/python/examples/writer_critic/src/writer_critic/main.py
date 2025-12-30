@@ -61,7 +61,7 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
     # Initial draft - no feedback yet
     print("\nGenerating initial tagline...")
     draft = await writer.call(product=product)
-    tagline = draft.get('tagline', '')
+    tagline = draft.output.get('tagline', '')
 
     print(f"\nInitial tagline: \"{tagline}\"")
 
@@ -72,8 +72,8 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
 
         # Get critic feedback
         review = await critic.call(product=product, tagline=tagline)
-        score = review.get('score', 0)
-        feedback = review.get('feedback', '')
+        score = review.output.get('score', 0)
+        feedback = review.output.get('feedback', '')
 
         print(f"Score: {score}/10")
         print(f"Feedback: {feedback}")
@@ -93,7 +93,7 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
                 tagline=tagline,
                 feedback=feedback
             )
-            tagline = draft.get('tagline', tagline)
+            tagline = draft.output.get('tagline', tagline)
             print(f"New tagline: \"{tagline}\"")
 
     # Results

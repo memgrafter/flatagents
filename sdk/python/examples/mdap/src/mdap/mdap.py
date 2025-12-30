@@ -133,10 +133,11 @@ class MDAPOrchestrator:
             Tuple of (raw_content, parsed_result or None)
         """
         # Render prompts using agent's templates
+        system_prompt = self.agent._render_system_prompt()
         user_prompt = self.agent._render_user_prompt(input_data)
 
         messages = [
-            {"role": "system", "content": self.agent._system_prompt},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ]
 
