@@ -42,39 +42,22 @@ uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
 
 # Minimal test configuration
 NUM_EXAMPLES=10        # Small dataset for testing
-MAX_ITERATIONS=2       # Just 2 optimization iterations
-NUM_CANDIDATES=2       # 2 candidate prompts per iteration
+BUDGET=2               # 2 optimization iterations
+
+# Estimated calls:
+# - Data generation: 10 * 2 (task + response) = 20
+# - Base pareto eval: ~3 (d_pareto size)
+# - Per iteration: ~10 (minibatch evals + reflective update + pareto eval if promoted)
+# - Summary: 1
+# Total: ~20 + 3 + 2*10 + 1 = ~44 calls
 
 echo ""
 echo "Test configuration:"
 echo "  - Examples: $NUM_EXAMPLES"
-echo "  - Max iterations: $MAX_ITERATIONS"
-echo "  - Candidates per iteration: $NUM_CANDIDATES"
+echo "  - Budget (iterations): $BUDGET"
 echo ""
-
-# Estimated calls per run:
-# - Data generation: NUM_EXAMPLES * 2 (task + response) = 20 calls
-# - Baseline eval: NUM_EXAMPLES = 10 calls
-# - Per iteration:
-#   - Failure analysis: ~5 calls (analyzing failures)
-#   - Prompt proposals: NUM_CANDIDATES = 2 calls
-#   - Candidate evals: NUM_CANDIDATES * NUM_EXAMPLES = 20 calls
-#   - Ranking: 1 call
-# - Summary: 1 call
-# Total estimate: ~20 + 10 + 2*(5+2+20+1) + 1 = ~87 calls
-
-echo "Estimated LLM calls: ~90"
+echo "Estimated LLM calls: ~44"
 echo ""
-
-# Skip confirmation if --yes flag is passed
-if [[ "$1" != "--yes" && "$1" != "-y" ]]; then
-    read -p "Continue with test run? (y/n) " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "Aborted."
-        exit 0
-    fi
-fi
 
 echo ""
 echo "Step 1: Generating evaluation data..."
@@ -92,8 +75,7 @@ echo ""
 echo "Step 3: Running optimization..."
 echo "----------------------------------------"
 "$VENV_PATH/bin/python" main.py optimize \
-    --max-iterations $MAX_ITERATIONS \
-    --num-candidates $NUM_CANDIDATES
+    --budget $BUDGET
 
 echo ""
 echo "=========================================="

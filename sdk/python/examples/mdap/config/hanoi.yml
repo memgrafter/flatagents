@@ -91,13 +91,13 @@ metadata:
 
   # MDAP orchestration settings (calibrated for 70% per-step accuracy)
   mdap:
-    k_margin: 5
-    max_candidates: 15
-    max_steps: 100
+    k_margin: 3
+    max_candidates: 10
+    max_steps: 20
     max_response_tokens: 2048
 
   # Problem-specific settings
-  # Note: For even disk counts with clockwise algorithm, target is peg 2 (index 2)
+  # Note: For odd disk counts with clockwise algorithm, target is peg 1 (index 1)
   hanoi:
-    initial_pegs: [[4, 3, 2, 1], [], []]
-    goal_pegs: [[], [], [4, 3, 2, 1]]
+    initial_pegs: [[3, 2, 1], [], []]
+    goal_pegs: [[], [3, 2, 1], []]
