@@ -277,12 +277,16 @@ class FlatMachine:
             variables = {"context": context, "input": context}
             agent_input = self._render_dict(input_spec, variables)
 
+            # Track pre-call stats to compute delta
+            pre_calls = agent.total_api_calls
+            pre_cost = agent.total_cost
+
             # Call agent
             result = await agent.call(**agent_input)
 
-            # Track costs
-            self.total_api_calls += agent.total_api_calls
-            self.total_cost += agent.total_cost
+            # Track costs (delta, not cumulative)
+            self.total_api_calls += agent.total_api_calls - pre_calls
+            self.total_cost += agent.total_cost - pre_cost
 
             # Extract output
             if result.output:

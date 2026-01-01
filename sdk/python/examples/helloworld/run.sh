@@ -14,6 +14,13 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Change to the script's directory so `uv` can find pyproject.toml
 cd "$SCRIPT_DIR"
 
+# 0. Ensure uv is installed
+if ! command -v uv &> /dev/null; then
+    echo "📥 Installing uv..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    export PATH="$HOME/.local/bin:$PATH"
+fi
+
 # 1. Check for LLM API Key
 if [ -z "$CEREBRAS_API_KEY" ] && [ -z "$OPENAI_API_KEY" ]; then
     echo "❌ ERROR: No API key found."
@@ -33,8 +40,10 @@ fi
 
 # 3. Install Dependencies
 echo "📦 Installing dependencies..."
-echo "  - Installing flatagents from PyPI..."
-uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+echo "  - Installing flatagents from local source..."
+# Install local flatagents with litellm extra
+FLATAGENTS_ROOT="$SCRIPT_DIR/../../../.."
+uv pip install --python "$VENV_PATH/bin/python" -e "$FLATAGENTS_ROOT/sdk/python[litellm]"
 
 echo "  - Installing helloworld demo package..."
 uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR"
