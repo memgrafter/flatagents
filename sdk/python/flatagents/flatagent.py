@@ -473,13 +473,15 @@ class FlatAgent:
 
     def _render_system_prompt(
         self,
+        input_data: Dict[str, Any],
         tools_prompt: str = "",
         tools: Optional[List[Dict]] = None
     ) -> str:
         """
-        Render system prompt with optional tools context.
+        Render system prompt with input data and optional tools context.
 
         Args:
+            input_data: Input values for {{ input.* }}
             tools_prompt: Rendered tool prompt to inject
             tools: List of tool definitions (available as {{ tools }})
 
@@ -494,6 +496,7 @@ class FlatAgent:
             "max_tokens": self.max_tokens,
         }
         return self._compiled_system.render(
+            input=input_data,
             tools_prompt=tools_prompt,
             tools=tools or [],
             model=model_config
@@ -587,7 +590,7 @@ class FlatAgent:
         tools_prompt = self._render_tool_prompt(tools)
 
         # Render prompts
-        system_prompt = self._render_system_prompt(tools_prompt=tools_prompt, tools=tools)
+        system_prompt = self._render_system_prompt(input_data, tools_prompt=tools_prompt, tools=tools)
         user_prompt = self._render_user_prompt(input_data, tools_prompt=tools_prompt, tools=tools)
 
         # Add output instruction if we have a schema and no tools

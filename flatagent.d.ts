@@ -121,7 +121,7 @@
  */
 
 export interface AgentWrapper {
-  spec: "flatagents";
+  spec: "flatagent";
   spec_version: string;
   data: AgentData;
   metadata?: Record<string, any>;

@@ -149,8 +149,7 @@ export interface Transition {
   to: string;
 }
 
-// Re-export AgentWrapper from flatagent.d.ts
-import { AgentWrapper } from "./flatagent";
-export { AgentWrapper };
+import { AgentWrapper, OutputSchema, ModelConfig } from "./flatagent";
+export { AgentWrapper, OutputSchema };
 
 export type FlatmachineConfig = MachineWrapper;
