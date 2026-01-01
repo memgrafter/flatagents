@@ -172,35 +172,41 @@ class ParallelExecution(ExecutionType):
 @register_execution_type("retry")
 class RetryExecution(ExecutionType):
     """
-    Retry on failure with exponential backoff.
+    Retry on failure with configurable backoff delays and jitter.
     
-    Useful for handling transient failures (rate limits, network issues).
+    Default backoffs [2, 8, 16, 35] total 61 seconds, intended to wait
+    for a fresh RPM (requests per minute) bucket.
     
     Example YAML:
         execution:
           type: retry
-          max_retries: 3
-          backoff: 1.0  # Initial backoff in seconds
-          backoff_multiplier: 2.0  # Multiply backoff after each retry
+          backoffs: [2, 8, 16, 35]  # Backoff delays in seconds
+          jitter: 0.1  # Random jitter factor (0.1 = ±10%)
     """
+    
+    # Default backoffs: 2 + 8 + 16 + 35 = 61 seconds (wait for fresh RPM bucket)
+    DEFAULT_BACKOFFS = [2, 8, 16, 35]
     
     def __init__(
         self,
-        max_retries: int = 3,
-        backoff: float = 1.0,
-        backoff_multiplier: float = 2.0
+        backoffs: Optional[List[float]] = None,
+        jitter: float = 0.1
     ):
-        self.max_retries = max_retries
-        self.backoff = backoff
-        self.backoff_multiplier = backoff_multiplier
+        self.backoffs = backoffs if backoffs is not None else self.DEFAULT_BACKOFFS
+        self.jitter = jitter
     
     @classmethod
     def from_config(cls, config: Dict[str, Any]) -> "RetryExecution":
         return cls(
-            max_retries=config.get("max_retries", 3),
-            backoff=config.get("backoff", 1.0),
-            backoff_multiplier=config.get("backoff_multiplier", 2.0)
+            backoffs=config.get("backoffs"),
+            jitter=config.get("jitter", 0.1)
         )
+    
+    def _apply_jitter(self, delay: float) -> float:
+        """Apply random jitter to a delay."""
+        import random
+        jitter_range = delay * self.jitter
+        return delay + random.uniform(-jitter_range, jitter_range)
     
     async def execute(
         self,
@@ -209,9 +215,9 @@ class RetryExecution(ExecutionType):
     ) -> Optional[Dict[str, Any]]:
         """Execute with retries on failure."""
         last_error = None
-        current_backoff = self.backoff
+        max_attempts = len(self.backoffs) + 1  # Initial attempt + retries
         
-        for attempt in range(self.max_retries + 1):
+        for attempt in range(max_attempts):
             try:
                 result = await agent.call(**input_data)
                 
@@ -225,16 +231,17 @@ class RetryExecution(ExecutionType):
             except Exception as e:
                 last_error = e
                 logger.warning(
-                    f"Attempt {attempt + 1}/{self.max_retries + 1} failed: {e}"
+                    f"Attempt {attempt + 1}/{max_attempts} failed: {e}"
                 )
                 
-                if attempt < self.max_retries:
-                    logger.info(f"Retrying in {current_backoff}s...")
-                    await asyncio.sleep(current_backoff)
-                    current_backoff *= self.backoff_multiplier
+                # If we have more retries, wait with jitter
+                if attempt < len(self.backoffs):
+                    delay = self._apply_jitter(self.backoffs[attempt])
+                    logger.info(f"Retrying in {delay:.1f}s...")
+                    await asyncio.sleep(delay)
         
         # All retries exhausted
-        logger.error(f"All {self.max_retries + 1} attempts failed. Last error: {last_error}")
+        logger.error(f"All {max_attempts} attempts failed. Last error: {last_error}")
         return None
 
 

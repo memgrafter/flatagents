@@ -24,6 +24,10 @@ data:
     
     build_char:
       agent: builder
+      execution:
+        type: retry
+        backoffs: [2, 8, 16, 35]  # Delay seconds: 2 + 8 + 16 + 35 = 61s total
+        jitter: 0.1  # 10% of each delay added/subtracted randomly
       input:
         current: "{{ context.current }}"
         target: "{{ context.target }}"
