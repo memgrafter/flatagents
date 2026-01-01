@@ -623,23 +623,76 @@ data:
 ## Implementation Roadmap
 
 ### Phase 1: Core Engine (MVP)
-- [ ] `FlatMachine` class with state execution
-- [ ] Simple expression parser (comparisons, boolean)
-- [ ] CEL expression engine (optional extra)
-- [ ] Context management
-- [ ] Agent integration
-- [ ] Basic hooks interface
+- [x] `FlatMachine` class with state execution
+- [x] Simple expression parser (comparisons, boolean)
+- [x] CEL expression engine (optional extra)
+- [x] Context management
+- [x] Agent integration
+- [x] Basic hooks interface
 
-### Phase 2: Standard Patterns
+### Phase 2: Standard Patterns & Execution Types
 - [ ] Loop detection and execution
 - [ ] Sequential pipelines
 - [ ] Conditional branching
 - [ ] Error state handling
+- [x] **Execution types** - declarative agent call modifiers
+
+#### Execution Types
+
+Execution types allow customizing **how** an agent is called, declared in YAML rather than requiring manual Python hook wiring. This keeps the machine configuration fully declarative ("flat").
+
+**Schema:**
+```yaml
+states:
+  solve_step:
+    agent: solver
+    execution:
+      type: mdap_voting  # Execution type name
+      k_margin: 3        # Type-specific config
+      max_candidates: 10
+    input:
+      pegs: "{{ context.pegs }}"
+```
+
+**Built-in Execution Types:**
+
+| Type | Description | Config |
+|------|-------------|--------|
+| `default` | Standard single agent call | (none) |
+| `mdap_voting` | Multi-sample with first-to-ahead-by-k voting | `k_margin`, `max_candidates` |
+| `parallel` | Run N samples in parallel, return all | `n_samples` |
+| `retry` | Retry on failure with backoff | `max_retries`, `backoff` |
+
+**MDAP Voting Example:**
+
+The MDAP voting execution type implements the first-to-ahead-by-k algorithm from the MAKER paper:
+1. Sample the agent multiple times
+2. Parse each response using the agent's `metadata.parsing` patterns
+3. Validate against `metadata.validation` schema
+4. Red-flag invalid responses
+5. Vote with k-margin stopping rule
+6. Return winning response
+
+This replaces the manual Python loop in `demo_machine.py` - the entire orchestration is driven by `machine.yml`:
+
+```python
+# Before: Manual loop with hook wiring
+mdap_hooks = MDAPHooks()
+while context['step'] < 20:
+    result = await mdap_hooks.voting_call(agent, input_data)
+    # ... update context ...
+
+# After: Pure YAML-driven execution
+machine = FlatMachine(config_file="machine.yml")
+result = await machine.execute(input={...})
+```
+
+**Key Principle:** Execution types are orchestration behavior (not agents) because they don't have their own LLM call. They modify how an existing agent is called. The config is in YAML; the implementation is internal to FlatMachine.
 
 ### Phase 3: Advanced Features
 - [ ] Parallel state execution
 - [ ] Tool loop integration (MCP)
-- [ ] Sampling/voting support
+- [ ] Custom execution type plugins
 
 ### Phase 4: Ecosystem
 - [ ] Visual machine editor

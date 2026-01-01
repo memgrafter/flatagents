@@ -1,6 +1,8 @@
 """
 MDAP Demo using FlatMachine.
 
+Now uses declarative execution types - no Python loop required.
+
 Usage:
     python -m mdap.demo_machine
 """
@@ -10,8 +12,7 @@ import logging
 import os
 from pathlib import Path
 
-from flatagents import FlatMachine, FlatAgent
-from .hooks import MDAPHooks
+from flatagents import FlatMachine, FlatAgent, MDAPVotingExecution
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run():
-    """Run the Hanoi demo with FlatMachine + MDAP hooks."""
+    """Run the Hanoi demo with FlatMachine + MDAP voting execution type."""
     print("=" * 60)
     print("MDAP - Tower of Hanoi Demo (FlatMachine)")
     print("=" * 60)
@@ -34,14 +35,8 @@ async def run():
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
     print(f"\nLoading machine from: {config_path}")
 
-    # Create MDAP hooks
-    mdap_hooks = MDAPHooks()
-
-    # Load machine with hooks
-    machine = FlatMachine(
-        config_file=str(config_path),
-        hooks=mdap_hooks
-    )
+    # Load machine - execution types are declared in YAML, no manual wiring needed
+    machine = FlatMachine(config_file=str(config_path))
 
     print(f"Machine: {machine.machine_name}")
     print(f"States: {list(machine.states.keys())}")
@@ -53,12 +48,13 @@ async def run():
     initial_pegs = hanoi_config.get('initial_pegs', [[3, 2, 1], [], []])
     goal_pegs = hanoi_config.get('goal_pegs', [[], [3, 2, 1], []])
 
-    # Configure hooks from agent (for parsing/validation)
-    mdap_hooks.configure_from_agent(agent)
-
-    print(f"\nMDAP Config:")
-    print(f"  k_margin: {mdap_hooks.config.k_margin}")
-    print(f"  max_candidates: {mdap_hooks.config.max_candidates}")
+    # Show MDAP config from the state's execution section
+    solve_step = machine.states.get('solve_step', {})
+    execution_config = solve_step.get('execution', {})
+    print(f"\nExecution Config (from machine.yml):")
+    print(f"  type: {execution_config.get('type', 'default')}")
+    print(f"  k_margin: {execution_config.get('k_margin', 'N/A')}")
+    print(f"  max_candidates: {execution_config.get('max_candidates', 'N/A')}")
 
     print(f"\nInitial state: {initial_pegs}")
     print(f"Goal: {goal_pegs}")
@@ -66,82 +62,24 @@ async def run():
     print("Starting FlatMachine execution...")
     print("-" * 60 + "\n")
 
-    # Execute machine
-    # NOTE: The current FlatMachine uses single agent calls.
-    # For full MDAP voting, we'd need to extend FlatMachine or
-    # use the voting_call hook directly. Here's a hybrid approach:
-
-    # Run step-by-step with voting
-    context = {
-        'pegs': [list(p) for p in initial_pegs],
-        'goal': goal_pegs,
-        'previous_move': None,
-        'step': 0,
-        'solved': False
-    }
-
-    trace = [{'pegs': [list(p) for p in context['pegs']], 'step': 0}]
-
-    while context['step'] < 20:
-        # Check if solved
-        if context['pegs'] == context['goal']:
-            context['solved'] = True
-            break
-
-        logger.info(f"Step {context['step'] + 1}: {context['pegs']}")
-
-        # Use voting call
-        input_data = {
-            'pegs': context['pegs'],
-            'previous_move': context['previous_move']
+    # Execute machine - all orchestration is YAML-driven
+    result = await machine.execute(
+        input={
+            'initial_pegs': initial_pegs,
+            'goal_pegs': goal_pegs
         }
-
-        result = await mdap_hooks.voting_call(agent, input_data)
-
-        if result is None:
-            logger.error("No valid response from voting")
-            break
-
-        # Update context
-        context['pegs'] = result.get('predicted_state', context['pegs'])
-        context['previous_move'] = result.get('move')
-        context['step'] += 1
-
-        trace.append({
-            'pegs': [list(p) for p in context['pegs']],
-            'step': context['step'],
-            'move': context['previous_move']
-        })
+    )
 
     # Results
     print("\n" + "-" * 60)
     print("Execution Complete!")
     print("-" * 60)
 
-    print("\nExecution trace:")
-    for state in trace:
-        print(f"  Step {state['step']}: {state['pegs']}")
+    print(f"\nFinal state: {result.get('pegs')}")
+    print(f"Solved: {result.get('solved')}")
+    print(f"Total steps: {result.get('steps')}")
 
-    print(f"\nFinal state: {context['pegs']}")
-    print(f"Solved: {context['solved']}")
-    print(f"Total steps: {context['step']}")
-
-    print("\n" + "-" * 60)
-    print("MDAP Statistics")
-    print("-" * 60)
-    metrics = mdap_hooks.get_metrics()
-    print(f"Total samples: {metrics['total_samples']}")
-    print(f"Samples per step: {metrics['samples_per_step']}")
-    if metrics['samples_per_step']:
-        avg = sum(metrics['samples_per_step']) / len(metrics['samples_per_step'])
-        print(f"Avg samples/step: {avg:.1f}")
-
-    print(f"\nRed-flag metrics:")
-    print(f"  Total red-flagged: {metrics['total_red_flags']}")
-    for reason, count in metrics.get('red_flags_by_reason', {}).items():
-        print(f"    {reason}: {count}")
-
-    print(f"\nTotal API calls: {agent.total_api_calls}")
+    print(f"\nTotal API calls: {machine.total_api_calls}")
 
     print("\n" + "=" * 60)
 

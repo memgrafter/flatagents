@@ -25,6 +25,7 @@ except ImportError:
     yaml = None
 
 from .expressions import get_expression_engine, ExpressionEngine
+from .execution import get_execution_type, ExecutionType
 from .hooks import MachineHooks, LoggingHooks
 from .flatagent import FlatAgent
 
@@ -281,19 +282,19 @@ class FlatMachine:
             pre_calls = agent.total_api_calls
             pre_cost = agent.total_cost
 
-            # Call agent
-            result = await agent.call(**agent_input)
+            # Get execution type from state config
+            execution_config = state.get('execution')
+            execution_type = get_execution_type(execution_config)
+
+            # Execute agent using the execution type
+            output = await execution_type.execute(agent, agent_input)
 
             # Track costs (delta, not cumulative)
             self.total_api_calls += agent.total_api_calls - pre_calls
             self.total_cost += agent.total_cost - pre_cost
 
-            # Extract output
-            if result.output:
-                output = result.output
-            elif result.content:
-                output = {"content": result.content}
-            else:
+            # Ensure output is a dict
+            if output is None:
                 output = {}
 
             # Map output to context

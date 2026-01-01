@@ -28,6 +28,14 @@ from .hooks import (
     CompositeHooks,
 )
 from .expressions import get_expression_engine, ExpressionEngine
+from .execution import (
+    ExecutionType,
+    DefaultExecution,
+    ParallelExecution,
+    RetryExecution,
+    MDAPVotingExecution,
+    get_execution_type,
+)
 
 __all__ = [
     "__version__",
@@ -45,6 +53,13 @@ __all__ = [
     # Expression engines
     "ExpressionEngine",
     "get_expression_engine",
+    # Execution types
+    "ExecutionType",
+    "DefaultExecution",
+    "ParallelExecution",
+    "RetryExecution",
+    "MDAPVotingExecution",
+    "get_execution_type",
     # LLM Backends
     "LLMBackend",
     "LiteLLMBackend",

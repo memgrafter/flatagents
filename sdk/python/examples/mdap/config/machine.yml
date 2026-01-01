@@ -30,6 +30,10 @@ data:
 
     solve_step:
       agent: solver
+      execution:
+        type: mdap_voting
+        k_margin: 3
+        max_candidates: 10
       input:
         pegs: "{{ context.pegs }}"
         previous_move: "{{ context.previous_move }}"
