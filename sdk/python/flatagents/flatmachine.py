@@ -136,17 +136,6 @@ class FlatMachine:
                 f"Current SDK supports 0.1.x."
             )
 
-        # Migration placeholder - add migrations here as needed
-        self._migrate_config()
-
-    def _migrate_config(self) -> None:
-        """Migrate older config versions. Add migrations as needed."""
-        # Example migration (when needed):
-        # if self.spec_version.startswith("0.1."):
-        #     # Migrate 0.1.x -> 0.2.x
-        #     pass
-        pass
-
     def _parse_machine_config(self) -> None:
         """Parse the machine configuration."""
         self.data = self.config['data']

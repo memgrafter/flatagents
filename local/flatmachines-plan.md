@@ -311,6 +311,11 @@ data:
     
     write:
       agent: writer
+      execution:
+        type: retry
+        backoffs: [2, 8, 16, 35]  # Delay array in seconds
+        jitter: 0.1  # 10% random variation
+      on_error: error_state  # Declarative error handling
       input:
         product: "{{ context.product }}"
         tagline: "{{ context.tagline }}"
@@ -322,6 +327,11 @@ data:
     
     review:
       agent: critic
+      execution:
+        type: retry
+      on_error:  # Granular error routing
+        default: error_state
+        RateLimitError: write  # Retry from writer
       input:
         product: "{{ context.product }}"
         tagline: "{{ context.tagline }}"
@@ -335,6 +345,12 @@ data:
         - condition: "context.round >= 4"
           to: done
         - to: write  # default
+    
+    error_state:
+      type: final
+      output:
+        error: true
+        message: "{{ context.last_error }}"
     
     done:
       type: final
@@ -354,6 +370,8 @@ metadata:
 3. **Transitions are ordered** - First matching condition wins (like if-elif-else)
 4. **Jinja2 for data mapping** - Same templating as flatagents for consistency
 5. **Simple expression syntax** - Comparisons and boolean logic only (initially)
+6. **Execution types** - Customize agent call behavior (retry, parallel, voting)
+7. **Declarative error handling** - `on_error` routes failures to recovery states
 
 ---
 
@@ -631,10 +649,10 @@ data:
 - [x] Basic hooks interface
 
 ### Phase 2: Standard Patterns & Execution Types
-- [ ] Loop detection and execution
-- [ ] Sequential pipelines
-- [ ] Conditional branching
-- [ ] Error state handling
+- [x] Loop detection and execution (via self-referential transitions + max_steps)
+- [x] Sequential pipelines (state → state → state flows)
+- [x] Conditional branching (transition conditions with expressions)
+- [x] Error state handling (on_error: simple string or error-type dict)
 - [x] **Execution types** - declarative agent call modifiers
 
 #### Execution Types
@@ -661,7 +679,7 @@ states:
 | `default` | Standard single agent call | (none) |
 | `mdap_voting` | Multi-sample with first-to-ahead-by-k voting | `k_margin`, `max_candidates` |
 | `parallel` | Run N samples in parallel, return all | `n_samples` |
-| `retry` | Retry on failure with backoff | `max_retries`, `backoff` |
+| `retry` | Retry on failure with configurable backoffs | `backoffs`, `jitter` |
 
 **MDAP Voting Example:**
 
