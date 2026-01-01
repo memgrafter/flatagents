@@ -29,7 +29,8 @@ dependencies = ["pyyaml", "jinja2"]
 [project.optional-dependencies]
 litellm = ["litellm"]
 aisuite = ["aisuite"]
-all = ["litellm", "aisuite"]
+cel = ["cel-python"]
+all = ["litellm", "aisuite", "cel-python"]
 
 [project.urls]
 Homepage = "https://github.com/memgrafter/flatagents"

@@ -1,0 +1,66 @@
+# Writer-Critic Loop Machine
+# Demonstrates a feedback loop between two agents
+
+spec: flatmachine
+spec_version: "0.1.0"
+
+data:
+  name: writer-critic-loop
+  
+  # Initial context - populated from input
+  context:
+    product: "{{ input.product }}"
+    tagline: null
+    feedback: null
+    score: 0
+    round: 0
+  
+  # Agent references
+  agents:
+    writer: ./writer.yml
+    critic: ./critic.yml
+  
+  # State machine
+  states:
+    start:
+      type: initial
+      transitions:
+        - to: write
+    
+    write:
+      agent: writer
+      input:
+        product: "{{ context.product }}"
+        tagline: "{{ context.tagline }}"
+        feedback: "{{ context.feedback }}"
+      output_to_context:
+        tagline: "{{ output.tagline }}"
+      transitions:
+        - to: review
+    
+    review:
+      agent: critic
+      input:
+        product: "{{ context.product }}"
+        tagline: "{{ context.tagline }}"
+      output_to_context:
+        score: "{{ output.score }}"
+        feedback: "{{ output.feedback }}"
+        round: "{{ context.round + 1 }}"
+      transitions:
+        - condition: "context.score >= 8"
+          to: done
+        - condition: "context.round >= 4"
+          to: done
+        - to: write
+    
+    done:
+      type: final
+      output:
+        tagline: "{{ context.tagline }}"
+        score: "{{ context.score }}"
+        rounds: "{{ context.round }}"
+
+metadata:
+  description: "Iterative writer-critic feedback loop"
+  tags: ["multi-agent", "feedback-loop"]
