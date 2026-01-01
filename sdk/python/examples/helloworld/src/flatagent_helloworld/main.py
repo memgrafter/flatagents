@@ -17,10 +17,6 @@ async def run():
     """
     print("--- Starting FlatMachine HelloWorld Demo ---")
 
-    if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("CEREBRAS_API_KEY"):
-        print("WARNING: No API key found in environment (OPENAI_API_KEY, CEREBRAS_API_KEY). "
-              "Execution will likely fail.")
-
     # Load the machine from YAML
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
     machine = FlatMachine(

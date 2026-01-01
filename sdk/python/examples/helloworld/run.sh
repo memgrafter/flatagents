@@ -21,15 +21,7 @@ if ! command -v uv &> /dev/null; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# 1. Check for LLM API Key
-if [ -z "$CEREBRAS_API_KEY" ] && [ -z "$OPENAI_API_KEY" ]; then
-    echo "❌ ERROR: No API key found."
-    echo "   Please set CEREBRAS_API_KEY or OPENAI_API_KEY:"
-    echo "   export CEREBRAS_API_KEY='your-key-here'"
-    exit 1
-fi
-
-# 2. Create Virtual Environment
+# 1. Create Virtual Environment
 echo "🔧 Ensuring virtual environment at $VENV_PATH..."
 mkdir -p "$(dirname "$VENV_PATH")"
 if [ ! -d "$VENV_PATH" ]; then

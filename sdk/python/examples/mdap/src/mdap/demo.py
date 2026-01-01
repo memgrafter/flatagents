@@ -28,11 +28,6 @@ async def run():
     print("MDAP - Tower of Hanoi Demo")
     print("=" * 60)
 
-    # Check for API key
-    if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("CEREBRAS_API_KEY"):
-        print("WARNING: No API key found (OPENAI_API_KEY, CEREBRAS_API_KEY).")
-        print("Execution will likely fail.")
-
     # Load agent from YAML
     config_path = Path(__file__).parent.parent.parent / 'config' / 'hanoi.yml'
     print(f"\nLoading agent from: {config_path}")

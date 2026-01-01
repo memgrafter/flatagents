@@ -350,10 +350,6 @@ def main():
     print(f"MDAP Calibration - Tower of Hanoi ({num_disks} disks)")
     print("=" * 60)
 
-    if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("CEREBRAS_API_KEY"):
-        print("ERROR: No API key found.")
-        return
-
     config_path = Path(__file__).parent.parent.parent / 'config' / 'hanoi.yml'
     print(f"Config: {config_path}")
     print(f"Optimal solution: {optimal_moves} moves")

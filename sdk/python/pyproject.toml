@@ -4,10 +4,10 @@ build-backend = "hatchling.build"
 
 [project]
 name = "flatagents"
-version = "0.1.5"
+version = "0.1.6"
 description = "A lightweight framework for building LLM-powered agents with pluggable backends."
 readme = "README.md"
-license = "MIT"
+license = "Apache-2.0"
 requires-python = ">=3.10"
 authors = [
     { email = "memgrafter@gmail.com" }
@@ -16,7 +16,7 @@ keywords = ["llm", "agents", "ai", "framework", "litellm", "aisuite"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -28,9 +28,9 @@ dependencies = ["pyyaml", "jinja2"]
 
 [project.optional-dependencies]
 litellm = ["litellm"]
-aisuite = ["aisuite"]
+aisuite = ["aisuite[all]"]
 cel = ["cel-python"]
-all = ["litellm", "aisuite", "cel-python"]
+all = ["litellm", "aisuite[all]", "cel-python"]
 
 [project.urls]
 Homepage = "https://github.com/memgrafter/flatagents"

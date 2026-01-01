@@ -14,7 +14,6 @@ Usage:
 
 import asyncio
 import logging
-import os
 from pathlib import Path
 
 from flatagents import FlatAgent
@@ -38,10 +37,6 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
     print("=" * 60)
     print("Writer-Critic Demo")
     print("=" * 60)
-
-    if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("CEREBRAS_API_KEY"):
-        print("WARNING: No API key found (OPENAI_API_KEY, CEREBRAS_API_KEY).")
-        print("Execution will likely fail.")
 
     # Load agents from YAML configs
     config_dir = Path(__file__).parent.parent.parent / 'config'

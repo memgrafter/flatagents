@@ -9,7 +9,6 @@ Usage:
 
 import asyncio
 import logging
-import os
 from pathlib import Path
 
 from flatagents import FlatMachine, FlatAgent, MDAPVotingExecution
@@ -26,10 +25,6 @@ async def run():
     print("=" * 60)
     print("MDAP - Tower of Hanoi Demo (FlatMachine)")
     print("=" * 60)
-
-    if not os.environ.get("OPENAI_API_KEY") and not os.environ.get("CEREBRAS_API_KEY"):
-        print("WARNING: No API key found (OPENAI_API_KEY, CEREBRAS_API_KEY).")
-        print("Execution will likely fail.")
 
     # Load machine config
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
