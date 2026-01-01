@@ -127,6 +127,26 @@ class FlatMachine:
         if 'data' not in self.config:
             raise ValueError("Config missing 'data' section")
 
+        # Version check with warning
+        self.spec_version = self.config.get('spec_version', '0.1.0')
+        major_minor = '.'.join(self.spec_version.split('.')[:2])
+        if major_minor not in ['0.1']:
+            logger.warning(
+                f"Config version {self.spec_version} may not be fully supported. "
+                f"Current SDK supports 0.1.x."
+            )
+
+        # Migration placeholder - add migrations here as needed
+        self._migrate_config()
+
+    def _migrate_config(self) -> None:
+        """Migrate older config versions. Add migrations as needed."""
+        # Example migration (when needed):
+        # if self.spec_version.startswith("0.1."):
+        #     # Migrate 0.1.x -> 0.2.x
+        #     pass
+        pass
+
     def _parse_machine_config(self) -> None:
         """Parse the machine configuration."""
         self.data = self.config['data']
@@ -222,6 +242,30 @@ class FlatMachine:
         """Evaluate a transition condition."""
         variables = {"context": context}
         return bool(self._expression_engine.evaluate(condition, variables))
+
+    def _get_error_recovery_state(
+        self,
+        state_config: Dict[str, Any],
+        error: Exception
+    ) -> Optional[str]:
+        """
+        Get recovery state from on_error config.
+        
+        Supports two formats:
+        - Simple: on_error: "error_state"
+        - Granular: on_error: {default: "error_state", RateLimitError: "retry_state"}
+        """
+        on_error = state_config.get('on_error')
+        if not on_error:
+            return None
+        
+        # Simple format: on_error: "state_name"
+        if isinstance(on_error, str):
+            return on_error
+        
+        # Granular format: on_error: {error_type: state_name, default: fallback}
+        error_type = type(error).__name__
+        return on_error.get(error_type) or on_error.get('default')
 
     def _find_next_state(
         self,
@@ -357,6 +401,19 @@ class FlatMachine:
                     if output:
                         final_output = output
                 except Exception as e:
+                    # Store error info in context for templates
+                    context['last_error'] = str(e)
+                    context['last_error_type'] = type(e).__name__
+                    
+                    # Check declarative on_error first
+                    state = self.states.get(current_state, {})
+                    recovery_state = self._get_error_recovery_state(state, e)
+                    if recovery_state:
+                        logger.warning(f"Error in {current_state}, transitioning to {recovery_state}: {e}")
+                        current_state = recovery_state
+                        continue
+                    
+                    # Fall back to hook
                     recovery_state = self._hooks.on_error(current_state, e, context)
                     if recovery_state:
                         current_state = recovery_state
@@ -376,6 +433,19 @@ class FlatMachine:
             try:
                 context, output = await self._execute_state(current_state, context)
             except Exception as e:
+                # Store error info in context for templates
+                context['last_error'] = str(e)
+                context['last_error_type'] = type(e).__name__
+                
+                # Check declarative on_error first
+                state = self.states.get(current_state, {})
+                recovery_state = self._get_error_recovery_state(state, e)
+                if recovery_state:
+                    logger.warning(f"Error in {current_state}, transitioning to {recovery_state}: {e}")
+                    current_state = recovery_state
+                    continue
+                
+                # Fall back to hook
                 recovery_state = self._hooks.on_error(current_state, e, context)
                 if recovery_state:
                     current_state = recovery_state

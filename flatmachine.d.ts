@@ -28,6 +28,8 @@
  * -------------
  * type              - "initial" or "final" (optional)
  * agent             - Agent name to execute (from agents map)
+ * execution         - Execution type config: {type: "retry", backoffs: [...], jitter: 0.1}
+ * on_error          - Error handling: "error_state" or {default: "...", ErrorType: "..."}
  * action            - Hook action to execute
  * input             - Input mapping (Jinja2 templates)
  * output_to_context - Map agent output to context (Jinja2 templates)
@@ -81,6 +83,11 @@
  *
  *       write:
  *         agent: writer
+ *         execution:
+ *           type: retry
+ *           backoffs: [2, 8, 16, 35]
+ *           jitter: 0.1
+ *         on_error: error_state
  *         input:
  *           product: "{{ context.product }}"
  *         output_to_context:
@@ -136,12 +143,26 @@ export interface StateDefinition {
   type?: "initial" | "final";
   agent?: string;
   action?: string;
+  execution?: ExecutionConfig;
+  on_error?: string | Record<string, string>;  // Simple: "error_state" or Granular: {default: "...", ErrorType: "..."}
   input?: Record<string, any>;
   output_to_context?: Record<string, string>;
   output?: Record<string, any>;
   transitions?: Transition[];
   tool_loop?: boolean;
   sampling?: "single" | "multi";
+}
+
+export interface ExecutionConfig {
+  type: "default" | "retry" | "parallel" | "mdap_voting";
+  // Retry config
+  backoffs?: number[];  // Delay array in seconds, e.g., [2, 8, 16, 35]
+  jitter?: number;      // Random variation factor, e.g., 0.1 for ±10%
+  // Parallel config
+  n_samples?: number;
+  // MDAP voting config
+  k_margin?: number;
+  max_candidates?: number;
 }
 
 export interface Transition {

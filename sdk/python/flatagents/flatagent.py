@@ -278,9 +278,14 @@ class FlatAgent:
         if 'data' not in config:
             raise ValueError("Config missing 'data' section")
 
-        spec_version = config.get('spec_version', '')
-        if not (spec_version.startswith('0.5') or spec_version.startswith('0.6')):
-            logger.warning(f"spec_version '{spec_version}' may not be fully compatible with {self.SPEC_VERSION}")
+        # Version check with warning
+        self.spec_version = config.get('spec_version', '0.6.0')
+        major_minor = '.'.join(self.spec_version.split('.')[:2])
+        if major_minor not in ['0.5', '0.6']:
+            logger.warning(
+                f"Config version {self.spec_version} may not be fully supported. "
+                f"Current SDK supports 0.5.x - 0.6.x."
+            )
 
     def _parse_agent_config(self):
         """Parse the v0.6.0 flatagent configuration."""
