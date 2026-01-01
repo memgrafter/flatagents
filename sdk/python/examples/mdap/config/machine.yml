@@ -1,0 +1,63 @@
+# MDAP Hanoi Machine Configuration
+# Uses flatmachine orchestration with MDAP voting hooks
+
+spec: flatmachine
+spec_version: "0.1.0"
+
+data:
+  name: mdap-hanoi
+
+  context:
+    pegs: "{{ input.initial_pegs }}"
+    goal: "{{ input.goal_pegs }}"
+    previous_move: null
+    step: 0
+    solved: false
+
+  agents:
+    solver: ./hanoi.yml
+
+  settings:
+    max_steps: 30
+
+  states:
+    start:
+      type: initial
+      transitions:
+        - condition: "context.pegs == context.goal"
+          to: done
+        - to: solve_step
+
+    solve_step:
+      agent: solver
+      input:
+        pegs: "{{ context.pegs }}"
+        previous_move: "{{ context.previous_move }}"
+      output_to_context:
+        pegs: "{{ output.predicted_state }}"
+        previous_move: "{{ output.move }}"
+        step: "{{ context.step + 1 }}"
+      transitions:
+        - condition: "context.pegs == context.goal"
+          to: done
+        - condition: "context.step >= 20"
+          to: failed
+        - to: solve_step
+
+    done:
+      type: final
+      output:
+        solved: true
+        pegs: "{{ context.pegs }}"
+        steps: "{{ context.step }}"
+
+    failed:
+      type: final
+      output:
+        solved: false
+        pegs: "{{ context.pegs }}"
+        steps: "{{ context.step }}"
+
+metadata:
+  description: "Tower of Hanoi solver using MDAP voting"
+  tags: ["hanoi", "mdap", "flatmachine"]

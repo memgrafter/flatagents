@@ -14,3 +14,4 @@ allow-direct-references = true
 
 [project.scripts]
 mdap-demo = "mdap.demo:main"
+mdap-demo_machine = "mdap.demo_machine:main"

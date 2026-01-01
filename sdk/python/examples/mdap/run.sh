@@ -39,7 +39,7 @@ uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR"
 # 4. Run the Demo
 echo "Running demo..."
 echo "---"
-"$VENV_PATH/bin/python" -m mdap.demo
+"$VENV_PATH/bin/python" -m mdap.demo_machine
 echo "---"
 
 echo "Demo complete!"
