@@ -1,0 +1,18 @@
+spec: flatagent
+spec_version: "0.6.0"
+
+data:
+  name: cleanup
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 1.0
+  system: You summarize errors concisely in one sentence.
+  user: |
+    An error occurred. Summarize what happened in one sentence:
+    Error type: {{ input.error_type }}
+    State: {{ input.state }}
+  output:
+    summary:
+      type: str
+      description: One sentence error summary

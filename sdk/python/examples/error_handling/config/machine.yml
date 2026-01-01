@@ -1,0 +1,57 @@
+spec: flatmachine
+spec_version: "0.1.0"
+
+data:
+  name: error-handling-demo
+  
+  context:
+    task: "{{ input.task }}"
+  
+  agents:
+    worker: ./worker.yml
+    broken: ./nonexistent.yml
+    cleanup: ./cleanup.yml
+  
+  states:
+    start:
+      type: initial
+      transitions:
+        - to: do_work
+    
+    do_work:
+      agent: broken
+      on_error: handle_error
+      input:
+        task: "{{ context.task }}"
+      output_to_context:
+        result: "{{ output.result }}"
+      transitions:
+        - to: done
+    
+    handle_error:
+      agent: cleanup
+      execution:
+        type: retry
+        backoffs: [2, 8, 16, 35]
+        jitter: 0.1
+      input:
+        error_type: "{{ context.last_error_type }}"
+        state: do_work
+      output_to_context:
+        summary: "{{ output.summary }}"
+      transitions:
+        - to: failed
+    
+    done:
+      type: final
+      output:
+        success: true
+        result: "{{ context.result }}"
+    
+    failed:
+      type: final
+      output:
+        success: false
+        summary: "{{ context.summary }}"
+        error: "{{ context.last_error }}"
+        error_type: "{{ context.last_error_type }}"
