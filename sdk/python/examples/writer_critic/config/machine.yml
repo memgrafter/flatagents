@@ -14,6 +14,8 @@ data:
     feedback: null
     score: 0
     round: 0
+    target_score: "{{ input.target_score | default(10) }}"
+    max_rounds: "{{ input.max_rounds | default(4) }}"
   
   # Agent references
   agents:
@@ -29,6 +31,10 @@ data:
     
     write:
       agent: writer
+      execution:
+        type: retry
+        backoffs: [2, 8, 16, 35]
+        jitter: 0.1
       input:
         product: "{{ context.product }}"
         tagline: "{{ context.tagline }}"
@@ -40,6 +46,10 @@ data:
     
     review:
       agent: critic
+      execution:
+        type: retry
+        backoffs: [2, 8, 16, 35]
+        jitter: 0.1
       input:
         product: "{{ context.product }}"
         tagline: "{{ context.tagline }}"
@@ -48,9 +58,9 @@ data:
         feedback: "{{ output.feedback }}"
         round: "{{ context.round + 1 }}"
       transitions:
-        - condition: "context.score >= 8"
+        - condition: "context.score >= context.target_score"
           to: done
-        - condition: "context.round >= 4"
+        - condition: "context.round >= context.max_rounds"
           to: done
         - to: write
     
