@@ -5,7 +5,6 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-VENV_BASE="$HOME/virtualenvs/flatagents-integration"
 
 echo "=============================================="
 echo "FlatAgents Integration Tests"

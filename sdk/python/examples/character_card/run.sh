@@ -1,8 +1,23 @@
 #!/bin/bash
 set -e
 
-PROJECT_NAME="character_card"
-VENV_PATH="$HOME/virtualenvs/$PROJECT_NAME"
+VENV_PATH=".venv"
+
+# --- Parse Arguments ---
+LOCAL_INSTALL=false
+PASSTHROUGH_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --local|-l)
+            LOCAL_INSTALL=true
+            shift
+            ;;
+        *)
+            PASSTHROUGH_ARGS+=("$1")
+            shift
+            ;;
+    esac
+done
 
 echo "--- Character Card Chat Demo Runner ---"
 
@@ -10,15 +25,18 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
 # Create venv
-mkdir -p "$(dirname "$VENV_PATH")"
 if [ ! -d "$VENV_PATH" ]; then
     uv venv "$VENV_PATH"
 fi
 
 # Install
-uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+if [ "$LOCAL_INSTALL" = true ]; then
+    uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+else
+    uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+fi
 uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR"
 
 # Run with all args passed through
 # Usage: ./run.sh path/to/card.png [--user NAME] [--no-system-prompt]
-"$VENV_PATH/bin/python" -m character_card.main "$@"
+"$VENV_PATH/bin/python" -m character_card.main "${PASSTHROUGH_ARGS[@]}"

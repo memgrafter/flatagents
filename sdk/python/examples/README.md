@@ -58,8 +58,17 @@ example-name-demo = "example_name.main:main"
 #!/bin/bash
 set -e
 
-PROJECT_NAME="example_name"
-VENV_PATH="$HOME/virtualenvs/$PROJECT_NAME"
+VENV_PATH=".venv"
+
+# Parse arguments
+LOCAL_INSTALL=false
+PASSTHROUGH_ARGS=()
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --local|-l) LOCAL_INSTALL=true; shift ;;
+        *) PASSTHROUGH_ARGS+=("$1"); shift ;;
+    esac
+done
 
 echo "--- Example Name Demo Runner ---"
 
@@ -67,17 +76,20 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd "$SCRIPT_DIR"
 
 # Create venv
-mkdir -p "$(dirname "$VENV_PATH")"
 if [ ! -d "$VENV_PATH" ]; then
     uv venv "$VENV_PATH"
 fi
 
-# Install
-uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+# Install (PyPI by default, local with --local flag)
+if [ "$LOCAL_INSTALL" = true ]; then
+    uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+else
+    uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+fi
 uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR"
 
 # Run
-"$VENV_PATH/bin/python" -m example_name.main "$@"
+"$VENV_PATH/bin/python" -m example_name.main "${PASSTHROUGH_ARGS[@]}"
 ```
 
 **Important:** Run `chmod +x run.sh` after creating.

@@ -2,14 +2,14 @@
 set -e
 
 # --- Configuration ---
-PROJECT_NAME="mdap"
-VENV_PATH="$HOME/virtualenvs/$PROJECT_NAME"
+VENV_PATH=".venv"
 
 # --- Script Logic ---
 echo "--- MDAP Calibration Runner ---"
 
 # Get the directory the script is located in
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$SCRIPT_DIR"
 
 # 1. Ensure Virtual Environment exists
 if [ ! -d "$VENV_PATH" ]; then

@@ -5,8 +5,21 @@
 set -e
 
 # --- Configuration ---
-PROJECT_NAME="gepa_self_optimizer"
-VENV_PATH="$HOME/virtualenvs/$PROJECT_NAME"
+VENV_PATH=".venv"
+
+# --- Parse Arguments ---
+LOCAL_INSTALL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --local|-l)
+            LOCAL_INSTALL=true
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 # --- Script Logic ---
 echo "=========================================="
@@ -19,8 +32,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # 1. Create Virtual Environment
-echo "Ensuring virtual environment at $VENV_PATH..."
-mkdir -p "$(dirname "$VENV_PATH")"
+echo "Ensuring virtual environment..."
 if [ ! -d "$VENV_PATH" ]; then
     uv venv "$VENV_PATH"
 else
@@ -29,8 +41,13 @@ fi
 
 # 3. Install Dependencies
 echo "Installing dependencies..."
-echo "  - Installing flatagents from local source..."
-uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+if [ "$LOCAL_INSTALL" = true ]; then
+    echo "  - Installing flatagents from local source..."
+    uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+else
+    echo "  - Installing flatagents from PyPI..."
+    uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+fi
 
 # Minimal test configuration
 NUM_EXAMPLES=10        # Small dataset for testing
@@ -80,4 +97,4 @@ echo "  - Optimization log: output/optimization_log.json"
 echo "  - Summary: output/summary.json"
 echo ""
 echo "To evaluate the optimized judge:"
-echo "  $VENV_PATH/bin/python main.py evaluate --judge output/optimized_judge.yml"
+echo "  .venv/bin/python main.py evaluate --judge output/optimized_judge.yml"

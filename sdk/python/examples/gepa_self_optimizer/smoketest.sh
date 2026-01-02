@@ -5,8 +5,21 @@
 set -e
 
 # --- Configuration ---
-PROJECT_NAME="gepa_self_optimizer"
-VENV_PATH="$HOME/virtualenvs/$PROJECT_NAME"
+VENV_PATH=".venv"
+
+# --- Parse Arguments ---
+LOCAL_INSTALL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --local|-l)
+            LOCAL_INSTALL=true
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -22,8 +35,7 @@ echo ""
 cd "$PROJECT_DIR"
 
 # 1. Create Virtual Environment
-echo "Ensuring virtual environment at $VENV_PATH..."
-mkdir -p "$(dirname "$VENV_PATH")"
+echo "Ensuring virtual environment..."
 if [ ! -d "$VENV_PATH" ]; then
     uv venv "$VENV_PATH"
 else
@@ -32,8 +44,13 @@ fi
 
 # 3. Install Dependencies
 echo "Installing dependencies..."
-echo "  - Installing flatagents from PyPI..."
-uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+if [ "$LOCAL_INSTALL" = true ]; then
+    echo "  - Installing flatagents from local source..."
+    uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+else
+    echo "  - Installing flatagents from PyPI..."
+    uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+fi
 
 # Clean up any previous test data
 echo ""
@@ -70,4 +87,4 @@ echo "Output files:"
 ls -la "$PROJECT_DIR/output/" 2>/dev/null || echo "  (no output directory)"
 echo ""
 echo "To run a full optimization:"
-echo "  cd $PROJECT_DIR && $VENV_PATH/bin/python main.py run --num-examples 100 --budget 50"
+echo "  cd $PROJECT_DIR && .venv/bin/python main.py run --num-examples 100 --budget 50"

@@ -6,7 +6,21 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SDK_DIR="$SCRIPT_DIR/../../.."
-VENV_PATH="$HOME/virtualenvs/flatagents-metrics-test"
+VENV_PATH="$SCRIPT_DIR/.venv"
+
+# --- Parse Arguments ---
+LOCAL_INSTALL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --local|-l)
+            LOCAL_INSTALL=true
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 echo "Metrics Integration Test"
 echo "========================"
@@ -19,7 +33,11 @@ fi
 
 # Install with metrics extras
 echo "Installing flatagents[metrics]..."
-uv pip install --python "$VENV_PATH/bin/python" -e "$SDK_DIR[metrics]" -q
+if [ "$LOCAL_INSTALL" = true ]; then
+    uv pip install --python "$VENV_PATH/bin/python" -e "$SDK_DIR[metrics]" -q
+else
+    uv pip install --python "$VENV_PATH/bin/python" "flatagents[metrics]" -q
+fi
 
 # Run the test
 echo "Running metrics tests..."

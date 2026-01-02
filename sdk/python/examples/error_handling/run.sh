@@ -1,8 +1,21 @@
 #!/bin/bash
 set -e
 
-PROJECT_NAME="error_handling"
-VENV_PATH="$HOME/virtualenvs/$PROJECT_NAME"
+VENV_PATH=".venv"
+
+# --- Parse Arguments ---
+LOCAL_INSTALL=false
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --local|-l)
+            LOCAL_INSTALL=true
+            shift
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 echo "--- Error Handling Demo Runner ---"
 
@@ -15,8 +28,7 @@ if ! command -v uv &> /dev/null; then
     export PATH="$HOME/.local/bin:$PATH"
 fi
 
-echo "🔧 Ensuring virtual environment at $VENV_PATH..."
-mkdir -p "$(dirname "$VENV_PATH")"
+echo "🔧 Ensuring virtual environment..."
 if [ ! -d "$VENV_PATH" ]; then
     uv venv "$VENV_PATH"
 else
@@ -24,8 +36,13 @@ else
 fi
 
 echo "📦 Installing dependencies..."
-FLATAGENTS_ROOT="$SCRIPT_DIR/../../../.."
-uv pip install --python "$VENV_PATH/bin/python" -e "$FLATAGENTS_ROOT/sdk/python[litellm]"
+if [ "$LOCAL_INSTALL" = true ]; then
+    echo "  - Installing flatagents from local source..."
+    uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
+else
+    echo "  - Installing flatagents from PyPI..."
+    uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+fi
 uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR"
 
 echo "🚀 Running demo..."
