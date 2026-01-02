@@ -6,7 +6,7 @@ data:
   model:
     provider: cerebras
     name: zai-glm-4.6
-    temperature: 0.8
+    temperature: 0.6
   system: You write short, punchy marketing copy. Be creative and memorable.
   user: |
     Product: {{ input.product }}

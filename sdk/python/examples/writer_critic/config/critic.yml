@@ -6,7 +6,7 @@ data:
   model:
     provider: cerebras
     name: zai-glm-4.6
-    temperature: 0.3
+    temperature: 0.6
   system: |
     You critique marketing copy. Be constructive but direct.
     Score fairly - a 10 should be exceptional, 7-8 is good, 5-6 is mediocre.

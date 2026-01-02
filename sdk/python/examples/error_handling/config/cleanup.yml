@@ -6,7 +6,7 @@ data:
   model:
     provider: cerebras
     name: zai-glm-4.6
-    temperature: 1.0
+    temperature: 0.6
   system: You summarize errors concisely in one sentence.
   user: |
     An error occurred. Summarize what happened in one sentence:

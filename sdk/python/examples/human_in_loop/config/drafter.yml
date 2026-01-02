@@ -1,0 +1,50 @@
+# Drafter Agent
+# Generates content based on a topic, optionally incorporating feedback
+
+spec: flatagent
+spec_version: "0.1.0"
+
+data:
+  name: content-drafter
+  
+  model:
+    provider: cerebras
+    name: zai-glm-4.6
+    temperature: 0.6
+  
+  system_prompt: |
+    You are a skilled content writer. Generate clear, engaging content
+    based on the given topic.
+    
+    {% if previous_draft and feedback %}
+    Your previous draft:
+    {{ previous_draft }}
+    
+    Human feedback to address:
+    {{ feedback }}
+    
+    Please revise your draft based on this feedback.
+    {% endif %}
+  
+  user_prompt: |
+    {% if previous_draft and feedback %}
+    Please revise the draft about "{{ topic }}" based on the feedback provided.
+    {% else %}
+    Please write a short piece about: {{ topic }}
+    {% endif %}
+  
+  output_schema:
+    type: object
+    properties:
+      content:
+        type: string
+        description: The generated or revised content
+      confidence:
+        type: number
+        description: How confident you are in this draft (0-1)
+    required:
+      - content
+      - confidence
+
+metadata:
+  description: "Content drafting agent with feedback incorporation"
