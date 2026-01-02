@@ -112,8 +112,73 @@ function generateAssets(targetDir: string): void {
   }
 }
 
+/**
+ * Extract SPEC_VERSION constant from a TypeScript spec file using AST.
+ */
+function extractSpecVersion(specPath: string): string {
+  const content = fs.readFileSync(specPath, "utf-8");
+
+  // Parse the source file
+  const sourceFile = ts.createSourceFile(
+    path.basename(specPath),
+    content,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS
+  );
+
+  // Find SPEC_VERSION export
+  let version: string | undefined;
+
+  function visit(node: ts.Node) {
+    // Look for: export const SPEC_VERSION = "0.6.0"
+    if (ts.isVariableStatement(node)) {
+      const exportModifier = node.modifiers?.find(
+        m => m.kind === ts.SyntaxKind.ExportKeyword
+      );
+
+      if (exportModifier) {
+        node.declarationList.declarations.forEach(decl => {
+          if (ts.isIdentifier(decl.name) && decl.name.text === "SPEC_VERSION") {
+            if (decl.initializer && ts.isStringLiteral(decl.initializer)) {
+              version = decl.initializer.text;
+            }
+          }
+        });
+      }
+    }
+
+    ts.forEachChild(node, visit);
+  }
+
+  visit(sourceFile);
+
+  if (!version) {
+    throw new Error(`Could not find SPEC_VERSION constant in ${specPath}`);
+  }
+
+  return version;
+}
+
 // Main execution
-const targetDir = process.argv[2] || path.join(REPO_ROOT, "sdk", "python", "flatagents", "assets");
+const args = process.argv.slice(2);
+
+// Handle --extract-version flag for use by lint scripts
+if (args[0] === "--extract-version" && args[1]) {
+  const specPath = path.resolve(args[1]);
+  try {
+    const version = extractSpecVersion(specPath);
+    console.log(version);
+    process.exit(0);
+  } catch (error) {
+    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(1);
+  }
+}
+
+// Normal asset generation
+const targetDir = args[0] || path.join(REPO_ROOT, "sdk", "python", "flatagents", "assets");
 console.log(`Generating spec assets to: ${targetDir}\n`);
 generateAssets(targetDir);
 console.log("\nDone!");
+

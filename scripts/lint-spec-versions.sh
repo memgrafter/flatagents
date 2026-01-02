@@ -1,5 +1,5 @@
 #!/bin/bash
-# Lint spec_version references against flatagent.d.ts source of truth
+# Lint spec_version references against .d.ts SPEC_VERSION constants
 # Usage: lint-spec-versions.sh [repo-root]
 # Exit: 0 if all versions match, 1 if mismatches found
 
@@ -14,52 +14,90 @@ if [[ ! "$REPO_ROOT" = /* ]]; then
     REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)/$REPO_ROOT"
 fi
 
-SPEC_FILE="$REPO_ROOT/flatagent.d.ts"
+FLATAGENT_SPEC="$REPO_ROOT/flatagent.d.ts"
+FLATMACHINE_SPEC="$REPO_ROOT/flatmachine.d.ts"
+EXTRACTOR="$SCRIPT_DIR/generate-spec-assets.ts"
 
-if [[ ! -f "$SPEC_FILE" ]]; then
-    echo "Error: flatagent.d.ts not found at $SPEC_FILE"
+# Verify spec files exist
+if [[ ! -f "$FLATAGENT_SPEC" ]]; then
+    echo "Error: flatagent.d.ts not found at $FLATAGENT_SPEC"
     exit 1
 fi
 
-# Extract the spec version from flatagent.d.ts (source of truth)
-# Pattern: * FlatAgents Configuration Schema v0.6.0
-SPEC_VERSION=$(grep -m 1 "FlatAgents Configuration Schema v" "$SPEC_FILE" | grep -oE "v[0-9]+\.[0-9]+\.[0-9]+" | sed 's/^v//')
-
-if [[ -z "$SPEC_VERSION" ]]; then
-    echo "Error: Could not extract spec_version from $SPEC_FILE"
+if [[ ! -f "$FLATMACHINE_SPEC" ]]; then
+    echo "Error: flatmachine.d.ts not found at $FLATMACHINE_SPEC"
     exit 1
 fi
 
-echo "Source of truth: flatagent.d.ts specifies version $SPEC_VERSION"
+# Extract spec versions using the TypeScript extractor
+echo "Extracting spec versions from SPEC_VERSION constants..."
+FLATAGENT_VERSION=$(cd "$SCRIPT_DIR" && npx tsx generate-spec-assets.ts --extract-version "$FLATAGENT_SPEC")
+FLATMACHINE_VERSION=$(cd "$SCRIPT_DIR" && npx tsx generate-spec-assets.ts --extract-version "$FLATMACHINE_SPEC")
+
+if [[ -z "$FLATAGENT_VERSION" || -z "$FLATMACHINE_VERSION" ]]; then
+    echo "Error: Could not extract spec versions"
+    exit 1
+fi
+
+echo "Source of truth:"
+echo "  flatagent.d.ts:   $FLATAGENT_VERSION"
+echo "  flatmachine.d.ts: $FLATMACHINE_VERSION"
 echo ""
 
-# Find all YAML/JSON files with spec_version that don't match
+# Find all YAML/JSON files with spec_version
 cd "$REPO_ROOT"
 
-MISMATCHES=()
+FLATAGENT_MISMATCHES=()
+FLATMACHINE_MISMATCHES=()
 
 while IFS= read -r file; do
-    # Extract spec_version from the file
+    # Extract spec and spec_version from the file
+    SPEC=$(rg '^spec:\s*(\w+)' "$file" -o -r '$1' --no-heading | head -1)
     VERSION=$(rg 'spec_version.*([0-9]+\.[0-9]+\.[0-9]+)' "$file" -o -r '$1' --no-heading | head -1)
 
     if [[ -z "$VERSION" ]]; then
         continue
     fi
 
-    if [[ "$VERSION" != "$SPEC_VERSION" ]]; then
-        MISMATCHES+=("$file: $VERSION (should be $SPEC_VERSION)")
+    # Check against appropriate spec version
+    if [[ "$SPEC" == "flatagent" ]]; then
+        if [[ "$VERSION" != "$FLATAGENT_VERSION" ]]; then
+            FLATAGENT_MISMATCHES+=("$file: $VERSION (should be $FLATAGENT_VERSION)")
+        fi
+    elif [[ "$SPEC" == "flatmachine" ]]; then
+        if [[ "$VERSION" != "$FLATMACHINE_VERSION" ]]; then
+            FLATMACHINE_MISMATCHES+=("$file: $VERSION (should be $FLATMACHINE_VERSION)")
+        fi
     fi
 done < <(rg 'spec_version' --type yaml --type json -l)
 
-if [[ ${#MISMATCHES[@]} -gt 0 ]]; then
-    echo "❌ Found $(echo "${#MISMATCHES[@]}") file(s) with mismatched spec_version:"
+# Report results
+TOTAL_MISMATCHES=$((${#FLATAGENT_MISMATCHES[@]} + ${#FLATMACHINE_MISMATCHES[@]}))
+
+if [[ $TOTAL_MISMATCHES -gt 0 ]]; then
+    echo "❌ Found $TOTAL_MISMATCHES file(s) with mismatched spec_version:"
     echo ""
-    for mismatch in "${MISMATCHES[@]}"; do
-        echo "  - $mismatch"
-    done
-    echo ""
+    
+    if [[ ${#FLATAGENT_MISMATCHES[@]} -gt 0 ]]; then
+        echo "FlatAgent mismatches:"
+        for mismatch in "${FLATAGENT_MISMATCHES[@]}"; do
+            echo "  - $mismatch"
+        done
+        echo ""
+    fi
+    
+    if [[ ${#FLATMACHINE_MISMATCHES[@]} -gt 0 ]]; then
+        echo "FlatMachine mismatches:"
+        for mismatch in "${FLATMACHINE_MISMATCHES[@]}"; do
+            echo "  - $mismatch"
+        done
+        echo ""
+    fi
+    
     exit 1
 else
-    echo "✓ All spec_version references match v$SPEC_VERSION"
+    echo "✓ All spec_version references match:"
+    echo "  - flatagent configs use v$FLATAGENT_VERSION"
+    echo "  - flatmachine configs use v$FLATMACHINE_VERSION"
     exit 0
 fi

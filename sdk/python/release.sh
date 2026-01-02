@@ -5,6 +5,55 @@ cd "$(dirname "$0")"
 REPO_ROOT="$(cd ../.. && pwd)"
 ASSETS_DIR="$PWD/flatagents/assets"
 
+echo "=== Python SDK Release Validation ==="
+echo ""
+
+# Extract versions from root TypeScript specs
+echo "Extracting spec versions from TypeScript files..."
+FLATAGENT_VERSION=$(npx tsx "$REPO_ROOT/scripts/generate-spec-assets.ts" --extract-version "$REPO_ROOT/flatagent.d.ts")
+FLATMACHINE_VERSION=$(npx tsx "$REPO_ROOT/scripts/generate-spec-assets.ts" --extract-version "$REPO_ROOT/flatmachine.d.ts")
+
+echo "TypeScript spec versions:"
+echo "  flatagent.d.ts:   $FLATAGENT_VERSION"
+echo "  flatmachine.d.ts: $FLATMACHINE_VERSION"
+echo ""
+
+# Extract versions from Python SDK
+echo "Checking Python SDK versions..."
+SDK_FLATAGENT_VERSION=$(grep -E '^\s*SPEC_VERSION\s*=\s*' flatagents/flatagent.py | grep -oE '"[0-9]+\.[0-9]+\.[0-9]+"' | tr -d '"')
+SDK_FLATMACHINE_VERSION=$(grep -E '^\s*SPEC_VERSION\s*=\s*' flatagents/flatmachine.py | grep -oE '"[0-9]+\.[0-9]+\.[0-9]+"' | tr -d '"')
+
+echo "Python SDK versions:"
+echo "  flatagent.py:   $SDK_FLATAGENT_VERSION"
+echo "  flatmachine.py: $SDK_FLATMACHINE_VERSION"
+echo ""
+
+# Validate versions match
+FAILED=0
+
+if [[ "$SDK_FLATAGENT_VERSION" != "$FLATAGENT_VERSION" ]]; then
+    echo "  ✗ flatagent.py version ($SDK_FLATAGENT_VERSION) != spec version ($FLATAGENT_VERSION)"
+    FAILED=1
+else
+    echo "  ✓ flatagent.py matches spec ($FLATAGENT_VERSION)"
+fi
+
+if [[ "$SDK_FLATMACHINE_VERSION" != "$FLATMACHINE_VERSION" ]]; then
+    echo "  ✗ flatmachine.py version ($SDK_FLATMACHINE_VERSION) != spec version ($FLATMACHINE_VERSION)"
+    FAILED=1
+else
+    echo "  ✓ flatmachine.py matches spec ($FLATMACHINE_VERSION)"
+fi
+
+if [[ "$FAILED" -eq 1 ]]; then
+    echo ""
+    echo "RELEASE ABORTED: SDK version mismatch with TypeScript specs."
+    echo "Update SPEC_VERSION in flatagent.py and/or flatmachine.py to match."
+    exit 1
+fi
+
+echo ""
+
 # Generate spec assets from root specs
 echo "Generating spec assets..."
 "$REPO_ROOT/scripts/generate-spec-assets.sh" "$ASSETS_DIR"

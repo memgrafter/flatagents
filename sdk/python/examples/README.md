@@ -4,12 +4,12 @@ Guide for creating new flatagents examples.
 
 ## Important: Spec Versions
 
-**Always check the spec files at the repo root for current versions:**
+**Check the `SPEC_VERSION` constant in the spec files at repo root:**
 
-- [`flatagent.d.ts`](../../flatagent.d.ts) — FlatAgent schema and current `spec_version`
-- [`flatmachine.d.ts`](../../flatmachine.d.ts) — FlatMachine schema and current `spec_version`
+- [`flatagent.d.ts`](../../flatagent.d.ts) — `export const SPEC_VERSION = "..."`
+- [`flatmachine.d.ts`](../../flatmachine.d.ts) — `export const SPEC_VERSION = "..."`
 
-Use the latest `spec_version` from these files when creating new examples.
+Use these values for `spec_version` when creating new examples.
 
 ## Required Structure
 
@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
 ```yaml
 spec: flatmachine
-spec_version: "X.X.X"  # Check flatmachine.d.ts for current version
+spec_version: "X.X.X"  # Check flatmachine.d.ts SPEC_VERSION constant
 
 data:
   name: example-name
@@ -188,7 +188,7 @@ metadata:
 
 ```yaml
 spec: flatagent
-spec_version: "X.X.X"  # Check flatagent.d.ts for current version
+spec_version: "X.X.X"  # Check flatagent.d.ts SPEC_VERSION constant
 
 data:
   name: agent-name

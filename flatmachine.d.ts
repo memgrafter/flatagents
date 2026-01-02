@@ -117,6 +117,8 @@
  *     description: "Iterative writer-critic loop"
  */
 
+export const SPEC_VERSION = "0.1.0";
+
 export interface MachineWrapper {
   spec: "flatmachine";
   spec_version: string;
