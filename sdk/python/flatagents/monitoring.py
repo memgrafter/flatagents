@@ -160,16 +160,31 @@ def _init_metrics() -> None:
             SERVICE_NAME: service_name
         })
         
-        # Configure OTLP exporter (supports Datadog, Honeycomb, etc.)
-        exporter = OTLPMetricExporter(
-            endpoint=os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'),
-            # Headers can be set via OTEL_EXPORTER_OTLP_HEADERS env var
-        )
+        # Check which exporter to use
+        exporter_type = os.getenv('OTEL_METRICS_EXPORTER', 'otlp').lower()
+        
+        if exporter_type == 'console':
+            # Use console exporter for testing/debugging
+            try:
+                from opentelemetry.sdk.metrics.export import ConsoleMetricExporter
+                exporter = ConsoleMetricExporter()
+            except ImportError:
+                logger = get_logger(__name__)
+                logger.warning("Console exporter not available, falling back to OTLP")
+                exporter = OTLPMetricExporter(
+                    endpoint=os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'),
+                )
+        else:
+            # Configure OTLP exporter (supports Datadog, Honeycomb, etc.)
+            exporter = OTLPMetricExporter(
+                endpoint=os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT'),
+                # Headers can be set via OTEL_EXPORTER_OTLP_HEADERS env var
+            )
         
         # Create meter provider with periodic export
         reader = PeriodicExportingMetricReader(
             exporter=exporter,
-            export_interval_millis=int(os.getenv('OTEL_METRIC_EXPORT_INTERVAL', '60000'))
+            export_interval_millis=int(os.getenv('OTEL_METRIC_EXPORT_INTERVAL', '5000' if exporter_type == 'console' else '60000'))
         )
         
         provider = MeterProvider(
