@@ -8,26 +8,26 @@ See local/flatmachines-plan.md for the full specification.
 """
 
 import json
-import logging
 import os
-from typing import Any, Dict, List, Optional, Union
-
-logger = logging.getLogger(__name__)
+from typing import Any, Dict, Optional
 
 try:
-    import jinja2
+    from jinja2 import Template
 except ImportError:
-    jinja2 = None
+    Template = None
 
 try:
     import yaml
 except ImportError:
     yaml = None
 
+from .monitoring import get_logger
 from .expressions import get_expression_engine, ExpressionEngine
 from .execution import get_execution_type, ExecutionType
 from .hooks import MachineHooks, LoggingHooks
 from .flatagent import FlatAgent
+
+logger = get_logger(__name__)
 
 
 class FlatMachine:
@@ -60,7 +60,7 @@ class FlatMachine:
             hooks: Custom hooks for extensibility
             **kwargs: Override config values
         """
-        if jinja2 is None:
+        if Template is None:
             raise ImportError("jinja2 is required. Install with: pip install jinja2")
 
         self._load_config(config_file, config_dict)
@@ -68,7 +68,8 @@ class FlatMachine:
         self._parse_machine_config()
 
         # Set up Jinja2 environment
-        self._jinja_env = jinja2.Environment()
+        from jinja2 import Environment
+        self._jinja_env = Environment()
 
         # Set up expression engine
         expression_mode = self.data.get("expression_engine", "simple")

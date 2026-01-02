@@ -1,19 +1,23 @@
 """
-Hooks system for flatmachines.
+MachineHooks - Extensibility points for FlatMachine.
 
-Provides extensibility points for machine execution:
-- on_state_enter: Before executing a state
-- on_state_exit: After executing a state
-- on_transition: When transitioning between states
-- on_error: When an error occurs
-- on_action: For custom hook actions
+Hooks allow custom logic at key points in machine execution:
+- Before/after state entry/exit
+- Before/after agent calls
+- On transitions
+- On errors
+
+Includes built-in LoggingHooks and MetricsHooks implementations.
 """
 
 import logging
+import time
 from abc import ABC
 from typing import Any, Dict, Optional
 
-logger = logging.getLogger(__name__)
+from .monitoring import get_logger
+
+logger = get_logger(__name__)
 
 
 class MachineHooks(ABC):
@@ -24,9 +28,12 @@ class MachineHooks(ABC):
     All methods have default implementations that pass through unchanged.
     
     Example:
+        from flatagents import get_logger
+        logger = get_logger(__name__)
+
         class MyHooks(MachineHooks):
             def on_state_enter(self, state_name, context):
-                print(f"Entering state: {state_name}")
+                logger.info(f"Entering state: {state_name}")
                 return context
                 
         machine = FlatMachine(config_file="...", hooks=MyHooks())

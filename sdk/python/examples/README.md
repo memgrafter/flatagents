@@ -117,13 +117,14 @@ Usage:
 """
 
 import asyncio
-import logging
 from pathlib import Path
 
-from flatagents import FlatMachine, LoggingHooks
+from flatagents import FlatMachine, LoggingHooks, setup_logging, get_logger
 # from .hooks import CustomHooks  # If using custom hooks
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging
+setup_logging(level="INFO")
+logger = get_logger(__name__)
 
 
 async def run():
@@ -132,8 +133,8 @@ async def run():
     
     result = await machine.execute(input={...})
     
-    print(f"Result: {result}")
-    print(f"API calls: {machine.total_api_calls}, Cost: ${machine.total_cost:.4f}")
+    logger.info(f"Result: {result}")
+    logger.info(f"API calls: {machine.total_api_calls}, Cost: ${machine.total_cost:.4f}")
     return result
 
 

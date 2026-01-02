@@ -3,23 +3,12 @@ Utility functions for the GEPA self-optimizer.
 """
 
 import json
-import logging
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-from flatagents import FlatAgent
-
-
-def setup_logging(level: str = "INFO") -> logging.Logger:
-    """Set up logging configuration."""
-    logging.basicConfig(
-        level=getattr(logging, level.upper()),
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    return logging.getLogger("gepa_optimizer")
+from flatagents import FlatAgent, get_logger
 
 
 def load_yaml(path: Path) -> dict:

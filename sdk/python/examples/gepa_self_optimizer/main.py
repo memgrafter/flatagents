@@ -20,10 +20,15 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from flatagents import setup_logging, get_logger
 from src.optimizer import GEPASelfOptimizer, OptimizationConfig
 from src.data_generator import DataGenerator
 from src.evaluator import JudgeEvaluator
-from src.utils import load_json, setup_logging
+from src.utils import load_json
+
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -78,7 +83,6 @@ def get_parser() -> argparse.ArgumentParser:
 
 async def cmd_run(args):
     """Run full GEPA optimization pipeline."""
-    logger = setup_logging()
     logger.info("Starting GEPA optimization pipeline")
 
     config = OptimizationConfig(
@@ -98,24 +102,23 @@ async def cmd_run(args):
         force_regenerate_data=args.force_regenerate,
     )
 
-    print("\n" + "=" * 60)
-    print("GEPA OPTIMIZATION COMPLETE")
-    print("=" * 60)
-    print(f"Initial accuracy:   {result.initial_accuracy:.1f}%")
-    print(f"Final accuracy:     {result.final_accuracy:.1f}%")
-    print(f"Improvement:        {result.total_improvement:+.1f}%")
-    print(f"Iterations:         {len(result.iterations)}")
-    print(f"Population size:    {result.population_size}")
-    print(f"Best candidate:     {result.best_candidate_id}")
-    print(f"Best lineage:       {result.best_lineage}")
-    print(f"Total LLM calls:    {result.total_llm_calls}")
-    print(f"Estimated cost:     ${result.total_cost:.4f}")
-    print(f"\nOptimized judge saved to: output/optimized_judge.yml")
+    logger.info("=" * 60)
+    logger.info("GEPA OPTIMIZATION COMPLETE")
+    logger.info("=" * 60)
+    logger.info(f"Initial accuracy:   {result.initial_accuracy:.1f}%")
+    logger.info(f"Final accuracy:     {result.final_accuracy:.1f}%")
+    logger.info(f"Improvement:        {result.total_improvement:+.1f}%")
+    logger.info(f"Iterations:         {len(result.iterations)}")
+    logger.info(f"Population size:    {result.population_size}")
+    logger.info(f"Best candidate:     {result.best_candidate_id}")
+    logger.info(f"Best lineage:       {result.best_lineage}")
+    logger.info(f"Total LLM calls:    {result.total_llm_calls}")
+    logger.info(f"Estimated cost:     ${result.total_cost:.4f}")
+    logger.info(f"Optimized judge saved to: output/optimized_judge.yml")
 
 
 async def cmd_generate_data(args):
     """Generate evaluation data."""
-    logger = setup_logging()
     logger.info(f"Generating {args.num_examples} evaluation examples")
 
     generator = DataGenerator(PROJECT_ROOT / "config")
@@ -130,13 +133,13 @@ async def cmd_generate_data(args):
 
     stats = generator.get_stats()
 
-    print("\n" + "=" * 60)
-    print("DATA GENERATION COMPLETE")
-    print("=" * 60)
-    print(f"Examples generated: {len(examples)}")
-    print(f"Output path: {output_path}")
-    print(f"Task generator calls: {stats['task_generator_calls']}")
-    print(f"Response generator calls: {stats['response_generator_calls']}")
+    logger.info("=" * 60)
+    logger.info("DATA GENERATION COMPLETE")
+    logger.info("=" * 60)
+    logger.info(f"Examples generated: {len(examples)}")
+    logger.info(f"Output path: {output_path}")
+    logger.info(f"Task generator calls: {stats['task_generator_calls']}")
+    logger.info(f"Response generator calls: {stats['response_generator_calls']}")
 
     # Show distribution
     verdicts = {}
@@ -147,20 +150,19 @@ async def cmd_generate_data(args):
         verdicts[v] = verdicts.get(v, 0) + 1
         domains[d] = domains.get(d, 0) + 1
 
-    print(f"\nVerdict distribution: {verdicts}")
-    print(f"Domain distribution: {domains}")
+    logger.info(f"Verdict distribution: {verdicts}")
+    logger.info(f"Domain distribution: {domains}")
 
 
 async def cmd_evaluate(args):
     """Evaluate judge on data."""
-    logger = setup_logging()
 
     judge_path = args.judge or (PROJECT_ROOT / "config" / "agents" / "judge.yml")
     data_path = args.data or (PROJECT_ROOT / "data" / "evaluation_set.json")
 
     if not data_path.exists():
-        print(f"Error: Data file not found: {data_path}")
-        print("Run 'python main.py generate-data' first")
+        logger.error(f"Data file not found: {data_path}")
+        logger.info("Run 'python main.py generate-data' first")
         return
 
     logger.info(f"Evaluating judge: {judge_path}")
@@ -171,37 +173,34 @@ async def cmd_evaluate(args):
 
     result = await evaluator.evaluate_dataset(examples)
 
-    print("\n" + "=" * 60)
-    print("EVALUATION RESULTS")
-    print("=" * 60)
-    print(f"Judge: {judge_path.name}")
-    print(f"Examples: {len(examples)}")
-    print()
-    print(f"Accuracy:           {result.accuracy:.1f}%")
-    print(f"Balanced Accuracy:  {result.balanced_accuracy:.1f}%")
-    print(f"False Positive Rate: {result.false_positive_rate:.1f}%")
-    print(f"False Negative Rate: {result.false_negative_rate:.1f}%")
-    print(f"Calibration Error:  {result.calibration_error:.3f}")
-    print()
-    print(f"Failures: {len(result.failures)}")
-    print(f"API calls: {result.total_calls}")
-    print(f"Estimated cost: ${result.total_cost:.4f}")
+    logger.info("=" * 60)
+    logger.info("EVALUATION RESULTS")
+    logger.info("=" * 60)
+    logger.info(f"Judge: {judge_path.name}")
+    logger.info(f"Examples: {len(examples)}")
+    logger.info(f"Accuracy:           {result.accuracy:.1f}%")
+    logger.info(f"Balanced Accuracy:  {result.balanced_accuracy:.1f}%")
+    logger.info(f"False Positive Rate: {result.false_positive_rate:.1f}%")
+    logger.info(f"False Negative Rate: {result.false_negative_rate:.1f}%")
+    logger.info(f"Calibration Error:  {result.calibration_error:.3f}")
+    logger.info(f"Failures: {len(result.failures)}")
+    logger.info(f"API calls: {result.total_calls}")
+    logger.info(f"Estimated cost: ${result.total_cost:.4f}")
 
     if result.failures:
-        print("\nSample failures:")
+        logger.info("Sample failures:")
         for failure in result.failures[:3]:
-            print(f"  - Expected: {failure['expected_verdict']}, "
-                  f"Got: {failure['predicted_verdict']}")
+            logger.info(f"  - Expected: {failure['expected_verdict']}, "
+                      f"Got: {failure['predicted_verdict']}")
 
 
 async def cmd_optimize(args):
     """Run GEPA optimization only (requires existing data)."""
-    logger = setup_logging()
 
     data_path = PROJECT_ROOT / "data" / "evaluation_set.json"
     if not data_path.exists():
-        print(f"Error: Data file not found: {data_path}")
-        print("Run 'python main.py generate-data' first")
+        logger.error(f"Data file not found: {data_path}")
+        logger.info("Run 'python main.py generate-data' first")
         return
 
     config = OptimizationConfig(
@@ -221,14 +220,14 @@ async def cmd_optimize(args):
         force_regenerate_data=False,
     )
 
-    print("\n" + "=" * 60)
-    print("GEPA OPTIMIZATION COMPLETE")
-    print("=" * 60)
-    print(f"Initial accuracy:   {result.initial_accuracy:.1f}%")
-    print(f"Final accuracy:     {result.final_accuracy:.1f}%")
-    print(f"Improvement:        {result.total_improvement:+.1f}%")
-    print(f"Population size:    {result.population_size}")
-    print(f"Best candidate:     {result.best_candidate_id}")
+    logger.info("=" * 60)
+    logger.info("GEPA OPTIMIZATION COMPLETE")
+    logger.info("=" * 60)
+    logger.info(f"Initial accuracy:   {result.initial_accuracy:.1f}%")
+    logger.info(f"Final accuracy:     {result.final_accuracy:.1f}%")
+    logger.info(f"Improvement:        {result.total_improvement:+.1f}%")
+    logger.info(f"Population size:    {result.population_size}")
+    logger.info(f"Best candidate:     {result.best_candidate_id}")
 
 
 def main():

@@ -15,8 +15,10 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from flatagents import MachineHooks, FlatAgent
+from flatagents import MachineHooks, FlatAgent, get_logger
 from .card_parser import parse_card
+
+logger = get_logger(__name__)
 
 
 class CharacterCardHooks(MachineHooks):
@@ -96,7 +98,7 @@ class CharacterCardHooks(MachineHooks):
                     name = data.get('name', name)
                     persona = data.get('description', persona)
             except Exception as e:
-                print(f"Warning: Failed to load persona file: {e}")
+                logger.warning(f"Failed to load persona file: {e}")
         
         return name, persona
     
@@ -113,7 +115,7 @@ class CharacterCardHooks(MachineHooks):
                     elif isinstance(data, dict) and 'messages' in data:
                         messages = data['messages']
             except Exception as e:
-                print(f"Warning: Failed to load messages file: {e}")
+                logger.warning(f"Failed to load messages file: {e}")
         
         return messages
     
@@ -150,21 +152,21 @@ class CharacterCardHooks(MachineHooks):
             self.user_agent = FlatAgent(config_file=str(agent_path))
         
         # Display info
-        print(f"\n{'=' * 60}")
-        print(f"Character: {self.card_data['name']}")
+        logger.info("-" * 60)
+        logger.info(f"Character: {self.card_data['name']}")
         if self.card_data.get('creator'):
-            print(f"By: {self.card_data['creator']}")
-        print(f"\nUser: {user_name}")
+            logger.info(f"By: {self.card_data['creator']}")
+        logger.info(f"User: {user_name}")
         if user_persona:
-            print(f"Persona: {user_persona[:100]}{'...' if len(user_persona) > 100 else ''}")
+            logger.info(f"Persona: {user_persona[:100]}{'...' if len(user_persona) > 100 else ''}")
         if context["messages"]:
-            print(f"Injected messages: {len(context['messages'])}")
+            logger.info(f"Injected messages: {len(context['messages'])}")
         if self.auto_user:
             max_str = f", max {self.max_turns} turns" if self.max_turns else ""
-            print(f"Mode: Auto-user (LLM-driven{max_str})")
+            logger.info(f"Mode: Auto-user (LLM-driven{max_str})")
         elif self.script_responses:
-            print(f"Mode: Scripted ({len(self.script_responses)} responses)")
-        print('=' * 60)
+            logger.info(f"Mode: Scripted ({len(self.script_responses)} responses)")
+        logger.info("-" * 60)
         
         return context
     
@@ -179,7 +181,7 @@ class CharacterCardHooks(MachineHooks):
         """
         # Skip if messages were injected
         if context["messages"]:
-            print("\n[Using injected messages]\n")
+            logger.info("Using injected messages")
             # Show last few messages
             for msg in context["messages"][-4:]:
                 role = context["user_name"] if msg["role"] == "user" else context["card_name"]
@@ -235,7 +237,7 @@ class CharacterCardHooks(MachineHooks):
         if self.auto_user and self.user_agent:
             # Check max turns (0 means unlimited)
             if self.max_turns and self.max_turns > 0 and self.turn_count >= self.max_turns:
-                print(f"[Reached max turns: {self.max_turns}]")
+                logger.info(f"Reached max turns: {self.max_turns}")
                 context["user_message"] = "/quit"
                 return context
             
@@ -254,7 +256,7 @@ class CharacterCardHooks(MachineHooks):
                 context["user_message"] = response
                 return context
             except Exception as e:
-                print(f"Auto-user error: {e}")
+                logger.error(f"Auto-user error: {e}")
                 context["user_message"] = "/quit"
                 return context
         

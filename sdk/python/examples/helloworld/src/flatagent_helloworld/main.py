@@ -1,11 +1,12 @@
 import asyncio
-import logging
 import os
 from pathlib import Path
 
-from flatagents import FlatMachine, LoggingHooks
+from flatagents import FlatMachine, LoggingHooks, setup_logging, get_logger
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configure logging for the entire application
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 async def run():
@@ -15,7 +16,7 @@ async def run():
     The loop and state management is now handled by FlatMachine,
     defined in config/machine.yml.
     """
-    print("--- Starting FlatMachine HelloWorld Demo ---")
+    logger.info("--- Starting FlatMachine HelloWorld Demo ---")
 
     # Load the machine from YAML
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
@@ -24,27 +25,27 @@ async def run():
         hooks=LoggingHooks()
     )
 
-    print(f"Machine: {machine.machine_name}")
-    print(f"States: {list(machine.states.keys())}\n")
+    logger.info(f"Machine: {machine.machine_name}")
+    logger.info(f"States: {list(machine.states.keys())}")
 
     target = "Hello, World!"
-    print(f"Target: '{target}'")
-    print(f"Building character by character...\n")
+    logger.info(f"Target: '{target}'")
+    logger.info("Building character by character...")
 
     # Execute the machine - all loop logic is in the config
     result = await machine.execute(input={"target": target})
 
-    print("\n--- Execution Complete ---")
-    print(f"Final: '{result.get('result', '')}'")
+    logger.info("--- Execution Complete ---")
+    logger.info(f"Final: '{result.get('result', '')}'")
 
     if result.get('success'):
-        print("Success! The machine built the string correctly.")
+        logger.info("Success! The machine built the string correctly.")
     else:
-        print("Failure. The machine did not build the string correctly.")
+        logger.warning("Failure. The machine did not build the string correctly.")
 
-    print("\n--- Execution Statistics ---")
-    print(f"Total Cost: ${machine.total_cost:.4f}")
-    print(f"Total API Calls: {machine.total_api_calls}")
+    logger.info("--- Execution Statistics ---")
+    logger.info(f"Total Cost: ${machine.total_cost:.4f}")
+    logger.info(f"Total API Calls: {machine.total_api_calls}")
 
 
 def main():

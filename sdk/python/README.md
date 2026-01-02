@@ -33,11 +33,16 @@ data:
 ```
 
 ```python
-from flatagents import FlatAgent
+from flatagents import FlatAgent, setup_logging, get_logger
+
+# Optional: Enable internal logging to see agent progress
+setup_logging(level="INFO")
+logger = get_logger(__name__)
 
 agent = FlatAgent(config_file="summarizer.yml")
 result = await agent.execute(input={"text": "Long article..."})
-print(result["summary"])
+
+logger.info(f"Summary: {result['summary']}")
 ```
 
 ### State Machine
@@ -81,11 +86,15 @@ data:
 ```
 
 ```python
-from flatagents import FlatMachine
+from flatagents import FlatMachine, setup_logging, get_logger
+
+setup_logging(level="INFO")
+logger = get_logger(__name__)
 
 machine = FlatMachine(config_file="machine.yml")
 result = await machine.execute(input={"product": "AI coding assistant"})
-print(result["tagline"])
+
+logger.info(f"Tagline: {result['tagline']}")
 ```
 
 ## Configuration
@@ -163,6 +172,46 @@ warnings = validate_flatmachine_config(config)
 - **[writer_critic](examples/writer_critic)** — Iterative refinement loop
 - **[mdap](examples/mdap)** — Multi-step reasoning with calibrated confidence
 - **[error_handling](examples/error_handling)** — Error recovery patterns
+
+## Logging & Metrics
+
+FlatAgents provides built-in standardized logging and OpenTelemetry-based metrics.
+
+### Logging
+
+```python
+from flatagents import setup_logging, get_logger
+
+# Configure once (respects FLATAGENTS_LOG_LEVEL env var)
+setup_logging(level="INFO")
+logger = get_logger(__name__)
+
+logger.info("Agent starting...")
+```
+
+**Environment Variables:**
+- `FLATAGENTS_LOG_LEVEL`: `DEBUG`, `INFO`, `WARNING`, `ERROR`
+- `FLATAGENTS_LOG_FORMAT`: `standard`, `json`, `simple`
+
+### Metrics (OpenTelemetry)
+
+Track performance, token usage, and costs. Metrics are opt-in.
+
+```bash
+pip install flatagents[metrics]
+export FLATAGENTS_METRICS_ENABLED=true
+```
+
+```python
+from flatagents import AgentMonitor
+
+with AgentMonitor("my-agent") as monitor:
+    result = await agent.execute(input)
+    # Automatically tracks duration, status, and can record custom metrics
+    monitor.metrics["tokens"] = 1200
+```
+
+Supported backends via OTLP: Datadog, Honeycomb, StatsD (via collector), etc.
 
 ## Specs
 

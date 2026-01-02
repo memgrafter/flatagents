@@ -6,15 +6,17 @@ optimal k values based on the MAKER paper formulas.
 """
 
 import asyncio
-import logging
 import math
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
+from flatagents import setup_logging, get_logger
 from .mdap import MDAPOrchestrator, MDAPConfig
 
-logger = logging.getLogger(__name__)
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -337,23 +339,18 @@ def main():
     )
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-
     num_disks = args.disks
     max_samples = args.samples
     optimal_moves = 2 ** num_disks - 1
 
-    print("=" * 60)
-    print(f"MDAP Calibration - Tower of Hanoi ({num_disks} disks)")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info(f"MDAP Calibration - Tower of Hanoi ({num_disks} disks)")
+    logger.info("=" * 60)
 
     config_path = Path(__file__).parent.parent.parent / 'config' / 'hanoi.yml'
-    print(f"Config: {config_path}")
-    print(f"Optimal solution: {optimal_moves} moves")
-    print(f"Max samples: {max_samples}")
+    logger.info(f"Config: {config_path}")
+    logger.info(f"Optimal solution: {optimal_moves} moves")
+    logger.info(f"Max samples: {max_samples}")
 
     result = asyncio.run(run_hanoi_calibration(
         str(config_path),
@@ -361,21 +358,19 @@ def main():
         max_samples=max_samples
     ))
 
-    print("\n" + "=" * 60)
-    print("Calibration Results")
-    print("=" * 60)
-    print(f"Disks: {num_disks}")
-    print(f"Per-step success rate: {result.success_rate:.2%}")
-    print(f"Samples tested: {result.total_samples}")
-    print(f"Correct: {result.correct_samples}")
-    print()
-    print(f"k_min for 90% reliability: {result.k_min_90}")
-    print(f"k_min for 95% reliability: {result.k_min_95}")
-    print(f"k_min for 99% reliability: {result.k_min_99}")
-    print()
-    print(f"Expected samples/step (k=3): {result.expected_samples_per_step:.1f}")
-    print(f"Estimated cost (k=3): ${result.estimated_cost:.4f}")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("Calibration Results")
+    logger.info("=" * 60)
+    logger.info(f"Disks: {num_disks}")
+    logger.info(f"Per-step success rate: {result.success_rate:.2%}")
+    logger.info(f"Samples tested: {result.total_samples}")
+    logger.info(f"Correct: {result.correct_samples}")
+    logger.info(f"k_min for 90% reliability: {result.k_min_90}")
+    logger.info(f"k_min for 95% reliability: {result.k_min_95}")
+    logger.info(f"k_min for 99% reliability: {result.k_min_99}")
+    logger.info(f"Expected samples/step (k=3): {result.expected_samples_per_step:.1f}")
+    logger.info(f"Estimated cost (k=3): ${result.estimated_cost:.4f}")
+    logger.info("=" * 60)
 
 
 if __name__ == "__main__":

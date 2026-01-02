@@ -23,17 +23,20 @@ pip install flatagents[litellm]
 ```
 
 ```python
-from flatagents import FlatAgent, FlatMachine
+from flatagents import FlatAgent, FlatMachine, setup_logging, get_logger
+
+setup_logging(level="INFO")
+logger = get_logger(__name__)
 
 # Single agent call
 agent = FlatAgent(config_file="agent.yml")
 result = await agent.execute(input={"text": "Hello"})
-print(result["summary"])
+logger.info(f"Summary: {result['summary']}")
 
 # State machine execution
 machine = FlatMachine(config_file="machine.yml")
 result = await machine.execute(input={"query": "Hello"})
-print(result)
+logger.info(f"Result: {result}")
 ```
 
 ## Key Patterns

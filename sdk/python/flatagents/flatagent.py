@@ -1,21 +1,35 @@
 """
-FlatAgent - A single LLM call configured entirely via YAML or JSON.
+FlatAgent - Single-call agent implementation.
 
-See flatagent.d.ts for the TypeScript type definition.
-
-An agent is a single LLM call: model + prompts + output schema.
-Optionally supports MCP (Model Context Protocol) for tool use.
-Workflows handle composition, branching, and loops.
+A single-call agent executes one prompt/response cycle with optional:
+- Input/output schemas
+- Response extraction (free, structured, tools, regex)
+- MCP tool integration
 """
 
+import asyncio
 import json
-import logging
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Union
+import os
+from typing import Any, Dict, List, Optional, Tuple
 
-if TYPE_CHECKING:
-    from .baseagent import MCPToolProvider, AgentResponse, ToolCall
+from .monitoring import get_logger
+from .baseagent import (
+    FlatAgent as BaseFlatAgent,
+    LLMBackend,
+    LiteLLMBackend,
+    AISuiteBackend,
+    Extractor,
+    FreeExtractor,
+    FreeThinkingExtractor,
+    StructuredExtractor,
+    ToolsExtractor,
+    RegexExtractor,
+    MCPToolProvider,
+    AgentResponse,
+    ToolCall,
+)
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 try:
     import jinja2
@@ -78,9 +92,13 @@ class FlatAgent:
           author: "your-name"
 
     Example usage:
+        from flatagents import setup_logging, get_logger
+        setup_logging(level="INFO")
+        logger = get_logger(__name__)
+
         agent = FlatAgent(config_file="agent.yaml")
         result = await agent.call(name="Alice")
-        print(result)  # {"greeting": "Hello, Alice!"}
+        logger.info(f"Result: {result}")
 
     Example with MCP:
         from flatagents import FlatAgent, MCPToolProvider

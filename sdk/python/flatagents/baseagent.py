@@ -6,13 +6,14 @@ LLM interaction is delegated to an LLMBackend, allowing different providers.
 """
 
 import asyncio
-import logging
 import os
 import random
 from abc import ABC, abstractmethod
 from typing import Any, Tuple, Callable, List, Dict, Optional, Protocol, runtime_checkable
 
-logger = logging.getLogger(__name__)
+from .monitoring import get_logger, track_operation
+
+logger = get_logger(__name__)
 
 try:
     import litellm

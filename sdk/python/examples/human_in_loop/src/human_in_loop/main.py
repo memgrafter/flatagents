@@ -14,17 +14,18 @@ Usage:
 
 import argparse
 import asyncio
-import logging
+import json
+import os
 from pathlib import Path
+from decimal import Decimal
+from typing import Dict, Any, Optional
 
-from flatagents import FlatMachine
+from flatagents import FlatMachine, setup_logging, get_logger
 from .hooks import HumanInLoopHooks
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 async def run(topic: str = "the benefits of daily exercise", max_revisions: int = 3):
@@ -35,9 +36,9 @@ async def run(topic: str = "the benefits of daily exercise", max_revisions: int 
         topic: The topic to write about
         max_revisions: Maximum number of revision rounds
     """
-    print("=" * 60)
-    print("Human-in-the-Loop Demo (FlatMachine)")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("Human-in-the-Loop Demo (FlatMachine)")
+    logger.info("=" * 60)
 
     # Load machine from YAML
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
@@ -46,11 +47,11 @@ async def run(topic: str = "the benefits of daily exercise", max_revisions: int 
         hooks=HumanInLoopHooks()
     )
 
-    print(f"\nMachine: {machine.machine_name}")
-    print(f"States: {list(machine.states.keys())}")
-    print(f"\nTopic: {topic}")
-    print(f"Max Revisions: {max_revisions}")
-    print("\n" + "-" * 60)
+    logger.info(f"Machine: {machine.machine_name}")
+    logger.info(f"States: {list(machine.states.keys())}")
+    logger.info(f"Topic: {topic}")
+    logger.info(f"Max Revisions: {max_revisions}")
+    logger.info("-" * 60)
 
     # Execute machine
     result = await machine.execute(input={
@@ -59,19 +60,19 @@ async def run(topic: str = "the benefits of daily exercise", max_revisions: int 
     })
 
     # Results
-    print("\n" + "=" * 60)
-    print("RESULTS")
-    print("=" * 60)
-    print(f"\nStatus: {result.get('status', 'unknown')}")
-    print(f"Revisions: {result.get('revisions', 0)}")
-    print(f"\nFinal Content:")
-    print("-" * 40)
-    print(result.get('content', ''))
-    print("-" * 40)
+    logger.info("=" * 60)
+    logger.info("RESULTS")
+    logger.info("=" * 60)
+    logger.info(f"Status: {result.get('status', 'unknown')}")
+    logger.info(f"Revisions: {result.get('revisions', 0)}")
+    logger.info("Final Content:")
+    logger.info("-" * 40)
+    logger.info(result.get('content', ''))
+    logger.info("-" * 40)
 
-    print("\n--- Statistics ---")
-    print(f"Total API calls: {machine.total_api_calls}")
-    print(f"Estimated cost: ${machine.total_cost:.4f}")
+    logger.info("--- Statistics ---")
+    logger.info(f"Total API calls: {machine.total_api_calls}")
+    logger.info(f"Estimated cost: ${machine.total_cost:.4f}")
 
     return result
 

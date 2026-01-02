@@ -15,16 +15,12 @@ from typing import Optional
 from .data_generator import DataGenerator
 from .evaluator import JudgeEvaluator, EvaluationResult
 from .prompt_evolver import PromptEvolver, PromptCandidate
-from .utils import (
-    load_yaml,
-    save_yaml,
-    load_json,
-    save_json,
-    load_agent,
-    setup_logging,
-)
+from .utils import load_yaml, save_yaml, load_json, save_json, load_agent
+from flatagents import setup_logging, get_logger
 
-logger = setup_logging()
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 # =============================================================================
@@ -415,8 +411,9 @@ class GEPASelfOptimizer:
 
         for i, example in enumerate(d_pareto):
             prediction = await evaluator.evaluate_single(example)
+            prediction_output = prediction.output or {}
             expected = example.get("expected_verdict", "PASS")
-            predicted = prediction.get("verdict", "PASS")
+            predicted = prediction_output.get("verdict", "PASS")
 
             # Binary score: 1.0 if correct, 0.0 if incorrect
             scores[i] = 1.0 if predicted == expected else 0.0
@@ -756,9 +753,10 @@ class GEPASelfOptimizer:
 
         # Save summary
         summary_path = self.output_dir / "summary.json"
-        save_json(summary_result, summary_path)
+        summary_output = summary_result.output or {}
+        save_json(summary_output, summary_path)
 
-        logger.info(f"\nSummary: {summary_result.get('summary', '')[:500]}")
+        logger.info(f"Summary: {summary_output.get('summary', '')[:500]}")
 
     def _update_totals(self) -> None:
         """Update total LLM calls and costs."""

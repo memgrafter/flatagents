@@ -1,38 +1,29 @@
 """
 Execution Types for FlatMachine.
 
-Execution types customize HOW an agent is called, declared in YAML.
-They are orchestration behavior (not agents) - no LLM call of their own.
-
-Built-in types:
-- default: Standard single agent call
-- mdap_voting: Multi-sample with first-to-ahead-by-k voting
-- parallel: Run N samples in parallel, return all
-- retry: Retry on failure with backoff
-
-Example YAML:
-    states:
-      solve_step:
-        agent: solver
-        execution:
-          type: mdap_voting
-          k_margin: 3
-          max_candidates: 10
+Provides different execution strategies for agent calls:
+- Default: Single call
+- Parallel: Multiple calls, first success or aggregate
+- Retry: Multiple attempts with backoff
+- MDAP Voting: Multi-sampling with majority vote
 """
 
 import asyncio
 import json
-import logging
 import re
+import time
 from abc import ABC, abstractmethod
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple, TYPE_CHECKING
+
+from .monitoring import get_logger
 
 if TYPE_CHECKING:
     from .flatagent import FlatAgent
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 # Registry of execution types

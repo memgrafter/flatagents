@@ -7,7 +7,6 @@ Handles multi-sampling, regex parsing, validation, and state management.
 
 import copy
 import json
-import logging
 import re
 from collections import Counter
 from dataclasses import dataclass, field
@@ -16,9 +15,11 @@ from typing import Any, Dict, List, Optional, Tuple
 import jsonschema
 import litellm
 
-from flatagents import FlatAgent
+from flatagents import FlatAgent, setup_logging, get_logger
 
-logger = logging.getLogger(__name__)
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 @dataclass

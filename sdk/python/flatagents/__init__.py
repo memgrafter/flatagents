@@ -44,6 +44,13 @@ from .validation import (
     get_asset,
     ValidationWarning,
 )
+from .monitoring import (
+    setup_logging,
+    get_logger,
+    get_meter,
+    AgentMonitor,
+    track_operation,
+)
 
 __all__ = [
     "__version__",
@@ -90,4 +97,10 @@ __all__ = [
     "get_flatmachine_schema",
     "get_asset",
     "ValidationWarning",
+    # Monitoring & Observability
+    "setup_logging",
+    "get_logger",
+    "get_meter",
+    "AgentMonitor",
+    "track_operation",
 ]

@@ -11,13 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from .utils import (
-    load_agent,
-    update_agent_prompts,
-    setup_logging,
-)
+from flatagents import setup_logging, get_logger
+from .utils import load_agent, update_agent_prompts
 
-logger = setup_logging()
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -80,7 +79,8 @@ class PromptEvolver:
         )
 
         # Parse new instruction back into system/user prompts
-        new_instruction = result.get("new_instruction", "")
+        result_output = result.output or {}
+        new_instruction = result_output.get("new_instruction", "")
         system_prompt, user_prompt = self._parse_instruction(
             new_instruction, current_system, current_user
         )
@@ -88,9 +88,9 @@ class PromptEvolver:
         return PromptCandidate(
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            changes_made=result.get("corrections_made", []),
-            factual_knowledge=result.get("factual_knowledge_extracted", []),
-            strategies_preserved=result.get("strategies_preserved", []),
+            changes_made=result_output.get("corrections_made", []),
+            factual_knowledge=result_output.get("factual_knowledge_extracted", []),
+            strategies_preserved=result_output.get("strategies_preserved", []),
         )
 
     def _parse_instruction(

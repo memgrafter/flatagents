@@ -9,9 +9,12 @@ import random
 from pathlib import Path
 from typing import Optional
 
-from .utils import load_agent, save_json, setup_logging
+from flatagents import setup_logging, get_logger
+from .utils import load_agent, save_json
 
-logger = setup_logging()
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 class DataGenerator:
@@ -80,25 +83,27 @@ class DataGenerator:
 
         # Step 1: Generate task
         task_result = await self.generate_task(domain, difficulty)
+        task_output = task_result.output or {}
 
         # Step 2: Generate response with specified error type
         response_result = await self.generate_response(
-            task=task_result.get("task", ""),
-            correct_response=task_result.get("correct_response", ""),
+            task=task_output.get("task", ""),
+            correct_response=task_output.get("correct_response", ""),
             error_type=error_type,
         )
+        response_output = response_result.output or {}
 
         # Combine into evaluation example
         example = {
-            "task": task_result.get("task", ""),
-            "correct_response": task_result.get("correct_response", ""),
-            "evaluation_criteria": task_result.get("evaluation_criteria", ""),
-            "key_elements": task_result.get("key_elements", []),
-            "agent_response": response_result.get("response", ""),
-            "has_error": response_result.get("has_error", False),
+            "task": task_output.get("task", ""),
+            "correct_response": task_output.get("correct_response", ""),
+            "evaluation_criteria": task_output.get("evaluation_criteria", ""),
+            "key_elements": task_output.get("key_elements", []),
+            "agent_response": response_output.get("response", ""),
+            "has_error": response_output.get("has_error", False),
             "error_type": error_type,
-            "error_description": response_result.get("error_description", ""),
-            "expected_verdict": response_result.get("expected_verdict", self.ERROR_TYPES.get(error_type, "PASS")),
+            "error_description": response_output.get("error_description", ""),
+            "expected_verdict": response_output.get("expected_verdict", self.ERROR_TYPES.get(error_type, "PASS")),
             "domain": domain,
             "difficulty": difficulty,
         }
@@ -180,8 +185,8 @@ async def main():
     )
     generator.save_dataset(examples, args.output)
 
-    print(f"Generated {len(examples)} examples")
-    print(f"Stats: {generator.get_stats()}")
+    logger.info(f"Generated {len(examples)} examples")
+    logger.info(f"Stats: {generator.get_stats()}")
 
 
 if __name__ == "__main__":

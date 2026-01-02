@@ -29,8 +29,8 @@ fi
 
 # 3. Install Dependencies
 echo "Installing dependencies..."
-echo "  - Installing flatagents from PyPI..."
-uv pip install --python "$VENV_PATH/bin/python" "flatagents[litellm]"
+echo "  - Installing flatagents from local source..."
+uv pip install --python "$VENV_PATH/bin/python" -e "$SCRIPT_DIR/../..[litellm]"
 
 # Minimal test configuration
 NUM_EXAMPLES=10        # Small dataset for testing

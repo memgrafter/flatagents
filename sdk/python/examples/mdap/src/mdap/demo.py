@@ -8,41 +8,38 @@ Usage:
 """
 
 import asyncio
-import logging
 import os
 from pathlib import Path
 
-from flatagents import FlatAgent
+from flatagents import FlatAgent, setup_logging, get_logger
 from .mdap import MDAPOrchestrator
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 async def run():
     """Run the Hanoi demo with MDAP."""
-    print("=" * 60)
-    print("MDAP - Tower of Hanoi Demo")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("MDAP - Tower of Hanoi Demo")
+    logger.info("=" * 60)
 
     # Load agent from YAML
     config_path = Path(__file__).parent.parent.parent / 'config' / 'hanoi.yml'
-    print(f"\nLoading agent from: {config_path}")
+    logger.info(f"Loading agent from: {config_path}")
 
     agent = FlatAgent(config_file=str(config_path))
-    print(f"Agent: {agent.agent_name}")
-    print(f"Model: {agent.model}")
+    logger.info(f"Agent: {agent.agent_name}")
+    logger.info(f"Model: {agent.model}")
 
     # Create MDAP orchestrator
     orchestrator = MDAPOrchestrator(agent)
 
-    print(f"\nMDAP Config:")
-    print(f"  k_margin: {orchestrator.config.k_margin}")
-    print(f"  max_candidates: {orchestrator.config.max_candidates}")
-    print(f"  max_steps: {orchestrator.config.max_steps}")
+    logger.info("MDAP Config:")
+    logger.info(f"  k_margin: {orchestrator.config.k_margin}")
+    logger.info(f"  max_candidates: {orchestrator.config.max_candidates}")
+    logger.info(f"  max_steps: {orchestrator.config.max_steps}")
 
     # Get problem settings from metadata
     hanoi_config = agent.metadata.get('hanoi', {})
@@ -54,10 +51,10 @@ async def run():
     previous_move = None
     move_count = 0
 
-    print(f"\nInitial state: {pegs}")
-    print(f"Goal: {goal_pegs}")
-    print("\n" + "-" * 60)
-    print("Starting MDAP execution...\n")
+    logger.info(f"Initial state: {pegs}")
+    logger.info(f"Goal: {goal_pegs}")
+    logger.info("-" * 60)
+    logger.info("Starting MDAP execution...")
 
     # Execute loop
     trace = [{'pegs': [list(p) for p in pegs], 'move_count': 0, 'previous_move': None}]
@@ -98,49 +95,49 @@ async def run():
         })
 
     # Show results
-    print("\n" + "-" * 60)
-    print("Execution Complete!")
-    print("-" * 60)
+    logger.info("-" * 60)
+    logger.info("Execution Complete!")
+    logger.info("-" * 60)
 
-    print("\nExecution trace:")
+    logger.info("Execution trace:")
     for i, state in enumerate(trace):
-        print(f"  Step {i}: {state['pegs']}")
+        logger.info(f"  Step {i}: {state['pegs']}")
 
     final_pegs = trace[-1]['pegs']
     solved = final_pegs == goal_pegs
 
-    print(f"\nFinal state: {final_pegs}")
-    print(f"Solved: {solved}")
-    print(f"Total moves: {move_count}")
+    logger.info(f"Final state: {final_pegs}")
+    logger.info(f"Solved: {solved}")
+    logger.info(f"Total moves: {move_count}")
 
-    print("\n" + "-" * 60)
-    print("Statistics")
-    print("-" * 60)
-    print(f"Total API calls: {orchestrator.total_api_calls}")
-    print(f"Total samples: {orchestrator.metrics.total_samples}")
-    print(f"Samples per step: {orchestrator.metrics.samples_per_step}")
+    logger.info("-" * 60)
+    logger.info("Statistics")
+    logger.info("-" * 60)
+    logger.info(f"Total API calls: {orchestrator.total_api_calls}")
+    logger.info(f"Total samples: {orchestrator.metrics.total_samples}")
+    logger.info(f"Samples per step: {orchestrator.metrics.samples_per_step}")
     if orchestrator.metrics.samples_per_step:
         avg = sum(orchestrator.metrics.samples_per_step) / len(orchestrator.metrics.samples_per_step)
-        print(f"Avg samples/step: {avg:.1f}")
+        logger.info(f"Avg samples/step: {avg:.1f}")
 
-    print(f"\nRed-flag metrics:")
-    print(f"  Total red-flagged: {orchestrator.metrics.total_red_flags}")
+    logger.info("Red-flag metrics:")
+    logger.info(f"  Total red-flagged: {orchestrator.metrics.total_red_flags}")
     if orchestrator.metrics.red_flags_by_reason:
         for reason, count in orchestrator.metrics.red_flags_by_reason.items():
-            print(f"    {reason}: {count}")
+            logger.info(f"    {reason}: {count}")
 
     if solved:
         num_disks = len([d for d in initial_pegs[0] if d > 0])
         optimal_moves = 2 ** num_disks - 1
-        print(f"\nOptimal moves for {num_disks} disks: {optimal_moves}")
+        logger.info(f"Optimal moves for {num_disks} disks: {optimal_moves}")
         if move_count == optimal_moves:
-            print("Perfect! Solved in optimal number of moves.")
+            logger.info("Perfect! Solved in optimal number of moves.")
         else:
-            print(f"Solved in {move_count} moves ({move_count - optimal_moves} extra)")
+            logger.info(f"Solved in {move_count} moves ({move_count - optimal_moves} extra)")
     else:
-        print("\nFailed to solve the puzzle.")
+        logger.info("Failed to solve the puzzle.")
 
-    print("\n" + "=" * 60)
+    logger.info("=" * 60)
 
 
 def main():

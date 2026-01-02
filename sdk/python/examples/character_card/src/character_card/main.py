@@ -20,16 +20,14 @@ Usage:
 
 import argparse
 import asyncio
-import logging
 from pathlib import Path
 
-from flatagents import FlatMachine
+from flatagents import FlatMachine, setup_logging, get_logger
 from .hooks import CharacterCardHooks
 
-logging.basicConfig(
-    level=logging.WARNING,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 async def run(
@@ -44,7 +42,7 @@ async def run(
 ):
     """Run character card chat."""
     if not Path(card_path).exists():
-        print(f"Error: Card file not found: {card_path}")
+        logger.error(f"Card file not found: {card_path}")
         return None
     
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
@@ -66,13 +64,13 @@ async def run(
     
     result = await machine.execute(input={})
     
-    print("\n" + "=" * 60)
-    print("Chat ended")
-    print(f"Character: {result.get('character', 'Unknown')}")
-    print(f"Messages: {result.get('turns', 0)}")
-    print(f"API calls: {machine.total_api_calls}")
-    print(f"Cost: ${machine.total_cost:.4f}")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("Chat ended")
+    logger.info(f"Character: {result.get('character', 'Unknown')}")
+    logger.info(f"Messages: {result.get('turns', 0)}")
+    logger.info(f"API calls: {machine.total_api_calls}")
+    logger.info(f"Cost: ${machine.total_cost:.4f}")
+    logger.info("=" * 60)
     
     return result
 

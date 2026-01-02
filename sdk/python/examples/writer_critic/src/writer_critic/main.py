@@ -15,16 +15,13 @@ Usage:
 """
 
 import asyncio
-import logging
 from pathlib import Path
 
-from flatagents import FlatMachine, LoggingHooks
+from flatagents import FlatMachine, LoggingHooks, setup_logging, get_logger
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, target_score: int = 8):
@@ -36,9 +33,9 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
         max_rounds: Maximum number of revision rounds
         target_score: Stop when score reaches this threshold
     """
-    print("=" * 60)
-    print("Writer-Critic Demo (FlatMachine)")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("Writer-Critic Demo (FlatMachine)")
+    logger.info("=" * 60)
 
     # Load machine from YAML - all loop logic is declarative
     config_path = Path(__file__).parent.parent.parent / 'config' / 'machine.yml'
@@ -47,12 +44,12 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
         hooks=LoggingHooks()
     )
 
-    print(f"\nMachine: {machine.machine_name}")
-    print(f"States: {list(machine.states.keys())}")
-    print(f"\nProduct: {product}")
-    print(f"Target Score: {target_score}/10")
-    print(f"Max Rounds: {max_rounds}")
-    print("\n" + "-" * 60)
+    logger.info(f"Machine: {machine.machine_name}")
+    logger.info(f"States: {list(machine.states.keys())}")
+    logger.info(f"Product: {product}")
+    logger.info(f"Target Score: {target_score}/10")
+    logger.info(f"Max Rounds: {max_rounds}")
+    logger.info("-" * 60)
 
     # Execute machine - all orchestration is in the YAML
     result = await machine.execute(input={
@@ -62,16 +59,16 @@ async def run(product: str = "a CLI tool for AI agents", max_rounds: int = 4, ta
     })
 
     # Results
-    print("\n" + "=" * 60)
-    print("RESULTS")
-    print("=" * 60)
-    print(f"\nFinal Tagline: \"{result.get('tagline', '')}\"")
-    print(f"Final Score: {result.get('score', 0)}/10")
-    print(f"Rounds: {result.get('rounds', 0)}")
+    logger.info("=" * 60)
+    logger.info("RESULTS")
+    logger.info("=" * 60)
+    logger.info(f"Final Tagline: \"{result.get('tagline', '')}\"")
+    logger.info(f"Final Score: {result.get('score', 0)}/10")
+    logger.info(f"Rounds: {result.get('rounds', 0)}")
 
-    print("\n--- Statistics ---")
-    print(f"Total API calls: {machine.total_api_calls}")
-    print(f"Estimated cost: ${machine.total_cost:.4f}")
+    logger.info("--- Statistics ---")
+    logger.info(f"Total API calls: {machine.total_api_calls}")
+    logger.info(f"Estimated cost: ${machine.total_cost:.4f}")
 
     return result
 

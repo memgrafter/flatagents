@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
+from flatagents import setup_logging, get_logger
 from .utils import (
     load_agent,
     load_json,
@@ -17,10 +18,11 @@ from .utils import (
     calculate_false_positive_rate,
     calculate_false_negative_rate,
     calculate_calibration_error,
-    setup_logging,
 )
 
-logger = setup_logging()
+# Configure logging
+setup_logging(level='INFO')
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -127,11 +129,12 @@ class JudgeEvaluator:
                 logger.info(f"Evaluating example {i+1}/{len(examples)}")
 
             prediction = await self.evaluate_single(example)
-            predictions.append(prediction)
+            prediction_output = prediction.output or {}
+            predictions.append(prediction_output)
 
             # Check if this is a failure case
             expected = example.get("expected_verdict", "PASS")
-            predicted = prediction.get("verdict", "PASS")
+            predicted = prediction_output.get("verdict", "PASS")
 
             if predicted != expected:
                 failures.append({
@@ -180,15 +183,15 @@ async def main():
 
     result = await evaluator.evaluate_dataset(examples)
 
-    print("\nEvaluation Results:")
-    print(f"  Accuracy: {result.accuracy:.1f}%")
-    print(f"  Balanced Accuracy: {result.balanced_accuracy:.1f}%")
-    print(f"  False Positive Rate: {result.false_positive_rate:.1f}%")
-    print(f"  False Negative Rate: {result.false_negative_rate:.1f}%")
-    print(f"  Calibration Error: {result.calibration_error:.3f}")
-    print(f"  Failures: {len(result.failures)}")
-    print(f"  API Calls: {result.total_calls}")
-    print(f"  Estimated Cost: ${result.total_cost:.4f}")
+    logger.info("Evaluation Results:")
+    logger.info(f"  Accuracy: {result.accuracy:.1f}%")
+    logger.info(f"  Balanced Accuracy: {result.balanced_accuracy:.1f}%")
+    logger.info(f"  False Positive Rate: {result.false_positive_rate:.1f}%")
+    logger.info(f"  False Negative Rate: {result.false_negative_rate:.1f}%")
+    logger.info(f"  Calibration Error: {result.calibration_error:.3f}")
+    logger.info(f"  Failures: {len(result.failures)}")
+    logger.info(f"  API Calls: {result.total_calls}")
+    logger.info(f"  Estimated Cost: ${result.total_cost:.4f}")
 
 
 if __name__ == "__main__":
