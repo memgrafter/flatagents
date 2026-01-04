@@ -12,6 +12,12 @@
  * data           - The agent configuration
  * metadata       - Extensibility layer (runners ignore unrecognized keys)
  *
+ * DERIVED SCHEMAS:
+ * ----------------
+ * This file (/flatagent.d.ts) is the SOURCE OF TRUTH for all FlatAgent schemas.
+ * Other schemas (JSON Schema, etc.) are DERIVED from this file using scripts.
+ * See: /scripts/generate-spec-assets.ts
+ *
  * DATA FIELDS:
  * ------------
  * name               - Agent identifier (inferred from filename if omitted)

@@ -1,5 +1,7 @@
 # FlatAgents + FlatMachines Build Guide
 
+> **Token limit: 500-1000 tokens.** Keep this doc concise.
+
 ## What They Are
 
 **FlatAgent** (`flatagent.d.ts`): A single LLM call configured in YAML. Defines model, prompts, and output schema. No orchestration logic.
@@ -30,8 +32,14 @@ logger = get_logger(__name__)
 
 # Single agent call
 agent = FlatAgent(config_file="agent.yml")
-result = await agent.execute(input={"text": "Hello"})
-logger.info(f"Summary: {result['summary']}")
+result = await agent.call(text="Hello")
+
+# AgentResponse has .content, .output, .tool_calls, .raw_response
+# Access parsed output via .output (a dict, may be None)
+if result.output:
+    logger.info(f"Summary: {result.output.get('summary')}")
+else:
+    logger.info(f"Raw content: {result.content}")
 
 # State machine execution
 machine = FlatMachine(config_file="machine.yml")
@@ -144,6 +152,22 @@ Use hooks for: Pareto selection, population sampling, external API calls, databa
 | `context.last_error` | After error |
 | `context.last_error_type` | After error |
 
+### Jinja2 Filters
+| Filter | Usage | Description |
+|--------|-------|-------------|
+| `tojson` | `{{ context.items \| tojson }}` | Serialize to JSON string |
+| `fromjson` | `{% for i in context.items \| fromjson %}` | Parse JSON string to object |
+
+**Note**: When iterating over context values stored as JSON strings, use `| fromjson`:
+```yaml
+# Context stores: sections: "[{\"title\": \"Intro\"}, ...]" (JSON string)
+# Use fromjson to iterate:
+user: |
+  {% for s in context.sections | fromjson %}
+  - {{ s.title }}
+  {% endfor %}
+```
+
 ## Persistence (Checkpoint/Resume)
 
 Enable crash recovery:
@@ -175,12 +199,15 @@ result = await machine2.execute(resume_from=execution_id)
 | `local` | File-based, survives restarts |
 | `memory` | Ephemeral, tests only |
 
-### Hierarchical Machines
+### Hierarchical Machines (HSM)
 
-Call child machines from states:
+Call child machines from states using `machine:` field:
 ```yaml
+machines:
+  child_workflow: ./child_machine.yml
+
 agents:
-  child_workflow: "./child.yml"  # or inline config
+  my_agent: ./agent.yml
 
 states:
   call_child:
@@ -189,4 +216,21 @@ states:
       query: "{{ context.query }}"
     output_to_context:
       result: "{{ output.answer }}"
+    transitions:
+      - to: next_state
 ```
+
+**Key points**:
+- Use `machines:` section to reference child machine configs
+- Child machines inherit parent's persistence/lock
+- Child API calls are aggregated into parent's `total_api_calls`
+
+## Manual Testing (for LLMs)
+
+Use an integration test venv (examples also have venvs following same pattern):
+
+```bash
+sdk/python/tests/integration/persistence/.venv/bin/python -c "from flatagents import FlatMachine; print('OK')"
+```
+
+**Note**: Run `run.sh --local` in any example/test first to create its `.venv` with local SDK.

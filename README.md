@@ -13,6 +13,14 @@ An agent is a single LLM call: **model + prompts + output schema**. That's it.
 
 See [`flatagent.d.ts`](./flatagent.d.ts) for the full TypeScript schema.
 
+### Derived Schemas
+
+The TypeScript definitions are the **source of truth**:
+- `/flatagent.d.ts` - FlatAgent schema
+- `/flatmachine.d.ts` - FlatMachine schema
+
+Other formats (JSON Schema, etc.) are **derived** from these files via `/scripts/generate-spec-assets.ts`.
+
 ### Structure
 
 ```yaml

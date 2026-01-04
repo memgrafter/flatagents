@@ -3,7 +3,7 @@
 # Contains 2 agents: abstract_analyzer and section_analyzer
 
 spec: flatmachine
-spec_version: "0.2.0"
+spec_version: "0.3.0"
 
 data:
   name: analyzer

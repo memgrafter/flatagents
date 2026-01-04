@@ -2,7 +2,7 @@
 # Demonstrates HSM: outlines story, then calls chapter_writer child for each chapter
 
 spec: flatmachine
-spec_version: "0.2.0"
+spec_version: "0.3.0"
 
 data:
   name: story-orchestrator

@@ -110,11 +110,27 @@ def extract_text_from_pdf(pdf_path: Path) -> str:
         return f"[Could not extract text from {pdf_path.name}]"
 
 
-def parse_paper_programmatically(text: str, paper_info: dict) -> ParsedPaper:
-    """Parse paper using regex - NO LLM. Fast and deterministic."""
+def parse_paper_programmatically(text: str, paper_info: dict, pdf_path: Path = None) -> ParsedPaper:
+    """
+    Parse paper using regex - NO LLM. Fast and deterministic.
     
-    # Use known title if available
+    Title extraction priority (see RSCH_TITLE_FIX.md):
+    1. Known title from paper_info registry
+    2. PDF metadata (if available and valid)
+    3. Regex fallback
+    """
     title = paper_info.get("title", "Unknown Title")
+    
+    # Try PDF metadata as fallback if no known title
+    if title == "Unknown Title" and pdf_path and pdf_path.exists():
+        try:
+            reader = PdfReader(pdf_path)
+            if reader.metadata and reader.metadata.title:
+                candidate = reader.metadata.title.strip()
+                if 5 < len(candidate) < 200 and "arXiv" not in candidate:
+                    title = candidate
+        except Exception:
+            pass
     
     # Extract authors
     author_section = text[:3000]
@@ -173,7 +189,7 @@ async def analyze_single_paper(paper_id: str) -> dict:
     # Download and parse paper
     pdf_path = ensure_paper_downloaded(paper_id)
     text = extract_text_from_pdf(pdf_path)
-    paper = parse_paper_programmatically(text, paper_info)
+    paper = parse_paper_programmatically(text, paper_info, pdf_path=pdf_path)
     
     logger.info(f"Analyzing: {paper.title}")
     logger.info(f"  Abstract: {len(paper.abstract)} chars")

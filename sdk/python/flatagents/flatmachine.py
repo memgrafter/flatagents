@@ -60,7 +60,7 @@ class FlatMachine:
     - Hierarchical execution (machine calls)
     """
 
-    SPEC_VERSION = "0.2.0"
+    SPEC_VERSION = "0.3.0"
 
     def __init__(
         self,
@@ -105,9 +105,13 @@ class FlatMachine:
         self._validate_spec()
         self._parse_machine_config()
 
-        # Set up Jinja2 environment
+        # Set up Jinja2 environment with custom filters
         from jinja2 import Environment
+        import json
         self._jinja_env = Environment()
+        # Add fromjson filter for parsing JSON strings in templates
+        # Usage: {% for item in context.items | fromjson %}
+        self._jinja_env.filters['fromjson'] = json.loads
 
         # Set up expression engine
         expression_mode = self.data.get("expression_engine", "simple")

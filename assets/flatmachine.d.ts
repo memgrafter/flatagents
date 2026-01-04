@@ -15,6 +15,12 @@
  * data           - The machine configuration
  * metadata       - Extensibility layer
  *
+ * DERIVED SCHEMAS:
+ * ----------------
+ * This file (/flatmachine.d.ts) is the SOURCE OF TRUTH for all FlatMachine schemas.
+ * Other schemas (JSON Schema, etc.) are DERIVED from this file using scripts.
+ * See: /scripts/generate-spec-assets.ts
+ *
  * DATA FIELDS:
  * ------------
  * name               - Machine identifier
@@ -128,7 +134,7 @@
  *     description: "Iterative writer-critic loop"
  */
 
-export const SPEC_VERSION = "0.2.0";
+export const SPEC_VERSION = "0.3.0";
 
 export interface MachineWrapper {
   spec: "flatmachine";
@@ -142,8 +148,10 @@ export interface MachineData {
   expression_engine?: "simple" | "cel";
   context?: Record<string, any>;
   agents?: Record<string, string | AgentWrapper>;
+  machines?: Record<string, string | MachineWrapper>;  // HSM: child machine references
   states: Record<string, StateDefinition>;
   settings?: MachineSettings;
+  persistence?: PersistenceConfig;
 }
 
 export interface MachineSettings {
@@ -155,6 +163,7 @@ export interface MachineSettings {
 export interface StateDefinition {
   type?: "initial" | "final";
   agent?: string;
+  machine?: string;  // HSM: invoke child machine (from machines map)
   action?: string;
   execution?: ExecutionConfig;
   on_error?: string | Record<string, string>;  // Simple: "error_state" or Granular: {default: "...", ErrorType: "..."}

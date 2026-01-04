@@ -55,6 +55,19 @@
             ]
           }
         },
+        "machines": {
+          "type": "object",
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/definitions/MachineWrapper"
+              }
+            ]
+          }
+        },
         "states": {
           "type": "object",
           "additionalProperties": {
@@ -63,6 +76,9 @@
         },
         "settings": {
           "$ref": "#/definitions/MachineSettings"
+        },
+        "persistence": {
+          "$ref": "#/definitions/PersistenceConfig"
         }
       },
       "required": [
@@ -287,6 +303,9 @@
         "agent": {
           "type": "string"
         },
+        "machine": {
+          "type": "string"
+        },
         "action": {
           "type": "string"
         },
@@ -398,6 +417,27 @@
           "type": "number"
         }
       }
+    },
+    "PersistenceConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "backend": {
+          "type": "string"
+        },
+        "checkpoint_on": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "enabled",
+        "backend"
+      ]
     }
   }
 }

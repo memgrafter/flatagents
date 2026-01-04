@@ -86,15 +86,36 @@ def extract_text_from_pdf(pdf_path: Path) -> str:
     return full_text
 
 
-def parse_paper_programmatically(text: str) -> ParsedPaper:
+def parse_paper_programmatically(text: str, pdf_path: Path = None) -> ParsedPaper:
     """
     Parse paper using regex and string operations - NO LLM.
     This is fast, deterministic, and handles large documents.
+    
+    Title extraction priority:
+    1. PDF metadata (if available and valid)
+    2. Known paper title check
+    3. Regex fallback
     """
-    # Extract title - look for "Attention Is All You Need" specifically or general pattern
-    if "Attention Is All You Need" in text:
+    title = "Unknown Title"
+    
+    # Try PDF metadata first (see RSCH_TITLE_FIX.md)
+    if pdf_path and pdf_path.exists():
+        try:
+            reader = PdfReader(pdf_path)
+            if reader.metadata and reader.metadata.title:
+                candidate = reader.metadata.title.strip()
+                # Validate: must be reasonable length and not generic
+                if 5 < len(candidate) < 200 and "arXiv" not in candidate:
+                    title = candidate
+        except Exception:
+            pass
+    
+    # Fallback: check for known paper title
+    if title == "Unknown Title" and "Attention Is All You Need" in text:
         title = "Attention Is All You Need"
-    else:
+    
+    # Fallback: regex extraction
+    if title == "Unknown Title":
         title_match = re.search(r'^([A-Z][^.!?\n]{10,100})', text[500:2000], re.MULTILINE)
         title = title_match.group(1).strip() if title_match else "Unknown Title"
     
@@ -176,7 +197,7 @@ async def run(resume_id: str = None):
     
     # Step 3: Parse paper structure (programmatic, fast)
     logger.info("Parsing paper structure...")
-    paper = parse_paper_programmatically(full_text)
+    paper = parse_paper_programmatically(full_text, pdf_path=pdf_path)
     
     logger.info("=" * 60)
     logger.info("Research Paper Analysis (HSM + Checkpoint)")

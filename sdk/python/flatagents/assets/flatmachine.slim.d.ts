@@ -1,4 +1,4 @@
-export const SPEC_VERSION = "0.2.0";
+export const SPEC_VERSION = "0.3.0";
 export interface MachineWrapper {
     spec: "flatmachine";
     spec_version: string;
@@ -10,8 +10,10 @@ export interface MachineData {
     expression_engine?: "simple" | "cel";
     context?: Record<string, any>;
     agents?: Record<string, string | AgentWrapper>;
+    machines?: Record<string, string | MachineWrapper>;
     states: Record<string, StateDefinition>;
     settings?: MachineSettings;
+    persistence?: PersistenceConfig;
 }
 export interface MachineSettings {
     hooks?: string;
@@ -21,6 +23,7 @@ export interface MachineSettings {
 export interface StateDefinition {
     type?: "initial" | "final";
     agent?: string;
+    machine?: string;
     action?: string;
     execution?: ExecutionConfig;
     on_error?: string | Record<string, string>;

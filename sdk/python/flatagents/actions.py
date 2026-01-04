@@ -102,10 +102,16 @@ class InlineInvoker(MachineInvoker):
         # Execute child
         # Note: resume_from=target_id ensures if we crash and retry, we pick up
         # where the child left off (or use its existing result)
-        return await target.execute(
+        result = await target.execute(
             input=context,
             resume_from=target_id
         )
+        
+        # Aggregate child machine stats back to parent
+        caller_machine.total_api_calls += target.total_api_calls
+        caller_machine.total_cost += target.total_cost
+        
+        return result
 
 class CloudInvoker(MachineInvoker):
     """STUB: Future AWS Step Functions / Lambda invoker."""
