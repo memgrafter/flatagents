@@ -25,6 +25,87 @@ if [ "$DRY_RUN" = true ]; then
 fi
 echo ""
 
+# Sync and validate __version__ with pyproject.toml
+PYPROJECT_VERSION=$(python - <<'PY'
+import pathlib
+import re
+
+text = pathlib.Path("pyproject.toml").read_text().splitlines()
+in_project = False
+version = ""
+for line in text:
+    stripped = line.strip()
+    if stripped.startswith("[") and stripped.endswith("]"):
+        in_project = stripped == "[project]"
+        continue
+    if not in_project:
+        continue
+    match = re.match(r'version\s*=\s*"([^"]+)"', stripped)
+    if match:
+        version = match.group(1)
+        break
+print(version)
+PY
+)
+export PYPROJECT_VERSION
+
+CURRENT_INIT_VERSION=$(python - <<'PY'
+import pathlib
+import re
+
+text = pathlib.Path("flatagents/__init__.py").read_text()
+match = re.search(r'^__version__\s*=\s*"([^"]+)"', text, re.M)
+print(match.group(1) if match else "")
+PY
+)
+
+if [[ -z "$PYPROJECT_VERSION" ]]; then
+    echo "RELEASE ABORTED: Could not read [project] version from pyproject.toml."
+    exit 1
+fi
+
+if [[ -z "$CURRENT_INIT_VERSION" ]]; then
+    echo "RELEASE ABORTED: __version__ not found in flatagents/__init__.py."
+    exit 1
+fi
+
+if [[ "$CURRENT_INIT_VERSION" != "$PYPROJECT_VERSION" ]]; then
+    echo "Updating flatagents/__init__.py __version__ to $PYPROJECT_VERSION"
+    python - <<'PY'
+import os
+import pathlib
+import re
+
+path = pathlib.Path("flatagents/__init__.py")
+text = path.read_text()
+version = os.environ["PYPROJECT_VERSION"]
+updated, count = re.subn(
+    r'^__version__\s*=\s*"[^"]+"',
+    f'__version__ = "{version}"',
+    text,
+    flags=re.M,
+)
+if count != 1:
+    raise SystemExit("RELEASE ABORTED: __version__ not found or ambiguous in flatagents/__init__.py")
+path.write_text(updated)
+PY
+fi
+
+UPDATED_INIT_VERSION=$(python - <<'PY'
+import pathlib
+import re
+
+text = pathlib.Path("flatagents/__init__.py").read_text()
+match = re.search(r'^__version__\s*=\s*"([^"]+)"', text, re.M)
+print(match.group(1) if match else "")
+PY
+)
+
+if [[ "$UPDATED_INIT_VERSION" != "$PYPROJECT_VERSION" ]]; then
+    echo "RELEASE ABORTED: __version__ does not match pyproject.toml."
+    exit 1
+fi
+
 # Copy root TypeScript specs to sdk assets
 cp "$REPO_ROOT/flatagent.d.ts" "$REPO_ROOT/flatmachine.d.ts" "$ASSETS_DIR/"
 
